@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --brand-primary: #ea580c;
+    --brand-primary-hover: #c2410c;
+    --brand-primary-light: #fff7ed;
+    --brand-slate: #0f172a;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+  }
+
+  .dark {
+    --brand-primary: #f97316;
+    --brand-primary-hover: #ea580c;
+    --brand-primary-light: #431407;
+  }
+
+  /* Smooth theme transitions for core surfaces without sluggish performance */
+  body {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "XFORCE Construction Platform",
+  "description": "Production-ready enterprise platform for XFORCE Construction Ltd and X-FORCE BRICKS, featuring public commercial showcase, interlocking products catalog, bonding designs, quote estimation intake, and order lifecycle tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

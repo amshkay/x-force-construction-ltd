@@ -1,0 +1,24 @@
+# ==============================================================================
+# XFORCE Construction Ltd / X-FORCE BRICKS
+# Production robots.txt
+# ==============================================================================
+
+User-agent: *
+Allow: /
+Allow: /products
+Allow: /designs
+Allow: /projects
+Allow: /services
+Allow: /about
+Allow: /contact
+Allow: /request
+Allow: /track
+
+# Internal management & private portals (not for search engine indexing)
+Disallow: /admin
+Disallow: /customer
+Disallow: /api/
+Disallow: /uploads/customer-uploads/
+Disallow: /uploads/installation-media/
+
+Sitemap: https://xforcebricks.com/sitemap.xml
