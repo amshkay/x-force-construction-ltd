@@ -13,7 +13,7 @@ import { getSupabaseClient } from '../lib/supabase/client';
 import { appConfig } from '../config/app.config';
 import { localStore } from '../lib/storage/localStorage';
 import { productRepository } from '../repositories/product.repository';
-import { mediaGalleryRepository } from '../repositories/mediaGallery.repository';
+import { mediaGalleryRepository, INITIAL_PROJECTS } from '../repositories/mediaGallery.repository';
 import { requestRepository } from '../repositories/request.repository';
 import { quotationRepository } from '../repositories/quotation.repository';
 import { orderRepository } from '../repositories/order.repository';
@@ -126,6 +126,28 @@ export const DEFAULT_PUBLIC_SERVICES: PublicServiceItem[] = [
     sortOrder: 4,
   },
 ];
+
+export const DEFAULT_PUBLIC_PROJECTS: PublicProject[] = INITIAL_PROJECTS.map((p) => ({
+  id: p.id,
+  title: p.title,
+  slug: p.slug,
+  location: p.location,
+  category: p.category,
+  completionDate: p.completionDate || 'Recent',
+  clientType: p.clientType,
+  description: p.description,
+  coverImageUrl: p.coverImageUrl,
+  galleryImages: Array.isArray(p.galleryMedia)
+    ? p.galleryMedia.map((m: any) => ({
+        url: m.url,
+        caption: m.caption,
+        phase: m.phase,
+      }))
+    : [],
+  materialsUsed: p.materialsUsed || [],
+  scopeSummary: p.scopeSummary,
+  status: p.status || 'completed',
+}));
 
 export class PublicDataService {
   /**
@@ -359,7 +381,7 @@ export class PublicDataService {
     const cached = localStore.get<any[]>('xforce_gallery_projects_v7', []);
     if (cached && cached.length > 0) {
       return cached
-        .filter((p) => p.isPublished)
+        .filter((p) => p.isPublished !== false)
         .map((p) => ({
           id: p.id,
           title: p.title,
@@ -383,81 +405,8 @@ export class PublicDataService {
         }));
     }
 
-    return [
-      {
-        id: 'p7000000-0000-0000-0000-000000000001',
-        title: 'Atlantic Logistics Freight Terminal & Staging Yard',
-        slug: 'atlantic-logistics-freight-terminal',
-        location: 'Ibeju-Lekki Free Trade Zone, Lagos State',
-        category: 'Industrial Yard',
-        completionDate: 'November 2025',
-        clientType: 'Commercial',
-        description:
-          'Turnkey paving of a 4,800m² heavy container staging yard designed to withstand axle loads up to 140 kN. Constructed with high-density 80mm interlocking pavers over laser-graded sub-base and stone-dust bedding.',
-        scopeSummary: '4,800 m² heavy-duty paving, sub-base compaction testing, perimeter retaining kerbs, and integrated storm-water runoff drainage.',
-        materialsUsed: [
-          '80mm Heavy-Duty Interlocking Paver (45 MPa)',
-          'Sharp River Sand Bedding',
-          'Granite Stone Dust (0-5mm)',
-          'Cast Concrete Heavy Kerbs',
-        ],
-        coverImageUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
-        galleryImages: [
-          {
-            url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Site cleared and graded prior to sub-base compaction and geotextile installation.',
-            phase: 'before',
-          },
-          {
-            url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Laser leveling of sharp sand bedding layer and laying 45° herringbone paver matrix.',
-            phase: 'during',
-          },
-          {
-            url: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Fully operational container staging apron delivered ahead of schedule.',
-            phase: 'after',
-          },
-        ],
-        status: 'completed',
-      },
-      {
-        id: 'p7000000-0000-0000-0000-000000000002',
-        title: 'The Palms Luxury Villa Residential Dry-Stack Facade',
-        slug: 'the-palms-luxury-villa-facade',
-        location: 'Banana Island, Ikoyi, Lagos',
-        category: 'Residential Building',
-        completionDate: 'January 2026',
-        clientType: 'Residential',
-        description:
-          'High-end contemporary private residence featuring exposed interlocking earth brick walls. Mortarless dry-stack installation paired with high-performance matte silicone sealant provides aesthetic warmth and natural acoustic dampening.',
-        scopeSummary: '3-story residential perimeter facade, exposed interior feature columns, and entrance foyer masonry.',
-        materialsUsed: [
-          '220mm Hydraform Interlocking Earth Block',
-          'High-Strength Reinforced Grout',
-          'Breathable Siloxane Water-Repellent Sealant',
-        ],
-        coverImageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-        galleryImages: [
-          {
-            url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Engineered raft foundation completed with vertical starter dowels positioned for block alignment.',
-            phase: 'before',
-          },
-          {
-            url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Dry-stack assembly of interlocking blocks with rubber mallets ensuring 0mm mortar joint tolerance.',
-            phase: 'during',
-          },
-          {
-            url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Completed residence showcasing rich natural earth tones and clean architectural shadow lines.',
-            phase: 'after',
-          },
-        ],
-        status: 'completed',
-      },
-    ];
+    localStore.set('xforce_gallery_projects_v7', INITIAL_PROJECTS);
+    return DEFAULT_PUBLIC_PROJECTS;
   }
 
   /**
@@ -582,6 +531,16 @@ export class PublicDataService {
     }
 
     localStore.set('xforce_public_services_v4', updatedList);
+    window.dispatchEvent(new CustomEvent('xforce_services_updated', { detail: updatedItem }));
+    try {
+      fetch('/api/public/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ services: updatedList }),
+      }).catch(() => {});
+    } catch {
+      // Safe exit
+    }
     return updatedItem;
   }
 
@@ -589,11 +548,22 @@ export class PublicDataService {
     const current = this.getServices();
     const filtered = current.filter((s) => s.id !== serviceId);
     localStore.set('xforce_public_services_v4', filtered);
+    window.dispatchEvent(new CustomEvent('xforce_services_updated', { detail: { id: serviceId, deleted: true } }));
+    try {
+      fetch('/api/public/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ services: filtered }),
+      }).catch(() => {});
+    } catch {
+      // Safe exit
+    }
     return true;
   }
 
   resetServicesToDefaults(): PublicServiceItem[] {
     localStore.set('xforce_public_services_v4', DEFAULT_PUBLIC_SERVICES);
+    window.dispatchEvent(new CustomEvent('xforce_services_updated'));
     return DEFAULT_PUBLIC_SERVICES;
   }
 

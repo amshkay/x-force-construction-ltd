@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
 import { Alert } from '../ui/Alert';
@@ -27,10 +27,18 @@ export const PublicServicesPage: React.FC<PublicServicesPageProps> = ({
   onRequestQuote,
 }) => {
   const { publicSettings } = useBusinessSettings();
-  const services: PublicServiceItem[] = publicDataService.getServices();
+  const [services, setServices] = useState<PublicServiceItem[]>(() => publicDataService.getServices());
   const installationsEnabled = publicSettings.features?.installationsEnabled ?? true;
 
   const [activeModalService, setActiveModalService] = useState<PublicServiceItem | null>(null);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setServices(publicDataService.getServices());
+    };
+    window.addEventListener('xforce_services_updated', handleUpdate);
+    return () => window.removeEventListener('xforce_services_updated', handleUpdate);
+  }, []);
 
   const getServiceIcon = (iconName: string) => {
     switch (iconName) {

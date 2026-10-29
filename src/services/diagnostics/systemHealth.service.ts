@@ -188,26 +188,17 @@ class SystemHealthService {
           }
         }
 
-        // D. Development / Standalone auto-init if not configured or uninitialized
-        if (!isAuthActive && !isInactivePersona && (!appConfig.supabase.isConfigured || appConfig.isDevelopment)) {
-          const defaultAdmin = DEV_SANDBOX_PERSONAS.administrator;
-          if (defaultAdmin) {
-            isAuthActive = true;
-            sessionRole = defaultAdmin.role.display_name;
-            sessionName = defaultAdmin.profile.full_name;
+        // D. Check for authenticated local session
+        if (!isAuthActive && !isInactivePersona) {
+          const storedSession = localStorage.getItem('xforce_auth_session');
+          if (storedSession) {
             try {
-              localStorage.setItem('xforce_auth_sandbox_persona', 'administrator');
-              localStorage.setItem(
-                'xforce_auth_user',
-                JSON.stringify({
-                  id: defaultAdmin.user.id,
-                  email: defaultAdmin.user.email,
-                  full_name: defaultAdmin.profile.full_name,
-                  role: defaultAdmin.role.name,
-                  role_name: defaultAdmin.role.display_name,
-                  permissions: defaultAdmin.permissions,
-                })
-              );
+              const parsed = JSON.parse(storedSession);
+              if (parsed?.profile?.status === 'active') {
+                isAuthActive = true;
+                sessionRole = parsed.role?.display_name || parsed.role?.name || 'Staff';
+                sessionName = parsed.profile?.full_name || parsed.user?.email;
+              }
             } catch {
               // safe
             }

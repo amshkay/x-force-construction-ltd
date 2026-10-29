@@ -532,6 +532,25 @@ export class BusinessSettingsService {
     // 4. Notify all reactive subscribers
     this.notifyListeners(updatedRecord);
 
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('xforce_settings_updated', { detail: updatedRecord }));
+      try {
+        fetch('/api/public/content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            heroImageUrl: updatedRecord.websiteContent?.heroImageUrl,
+            secondaryHeroImageUrl: updatedRecord.websiteContent?.secondaryHeroImageUrl,
+            heroHeading: updatedRecord.websiteContent?.heroHeading,
+            heroSubheading: updatedRecord.websiteContent?.heroSubheading,
+            slogan: updatedRecord.slogan,
+          }),
+        }).catch(() => {});
+      } catch {
+        // Safe exit
+      }
+    }
+
     return updatedRecord;
   }
 
