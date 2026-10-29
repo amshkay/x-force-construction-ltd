@@ -49,6 +49,7 @@ import { getWhatsAppUrl } from '../../utils/whatsapp';
 import { useToast } from '../ui/Toast';
 import { ImageInputWithUpload } from '../ui/ImageInputWithUpload';
 import { ServicesManagementModal } from './ServicesManagementModal';
+import { FeaturedProjectsManagementModal } from './FeaturedProjectsManagementModal';
 import { Button } from '../ui/Button';
 
 type SettingsTab =
@@ -1239,6 +1240,11 @@ export const BusinessSettingsPanel: React.FC = () => {
                 {/* Specialized Installation Services Management */}
                 <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
                   <ServicesManagementModal inline={true} />
+                </div>
+
+                {/* Featured Client Projects Management */}
+                <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
+                  <FeaturedProjectsManagementModal inline={true} />
                 </div>
               </div>
             </div>

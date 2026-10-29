@@ -307,6 +307,45 @@ app.get('/api/media/list', generalApiLimiter, async (req, res) => {
   }
 });
 
+// Persistent Homepage & Public Content API
+const PUBLIC_CONTENT_FILE = path.join(UPLOADS_DIR, 'public-homepage-config.json');
+
+app.get('/api/public/content', generalApiLimiter, (req, res) => {
+  try {
+    if (fs.existsSync(PUBLIC_CONTENT_FILE)) {
+      const data = JSON.parse(fs.readFileSync(PUBLIC_CONTENT_FILE, 'utf-8'));
+      return res.json({ success: true, data });
+    }
+    return res.json({ success: true, data: null });
+  } catch (err: any) {
+    return res.json({ success: false, data: null });
+  }
+});
+
+app.post('/api/public/content', generalApiLimiter, (req, res) => {
+  try {
+    const payload = req.body;
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(PUBLIC_CONTENT_FILE)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(PUBLIC_CONTENT_FILE, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+    const merged = {
+      ...existing,
+      ...payload,
+      updatedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(PUBLIC_CONTENT_FILE, JSON.stringify(merged, null, 2), 'utf-8');
+    return res.json({ success: true, data: merged });
+  } catch (err: any) {
+    console.error('[Public Content] Save error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to save public content.' });
+  }
+});
+
 // Vite middleware in dev or static in prod
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {

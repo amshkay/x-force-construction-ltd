@@ -123,7 +123,7 @@ const INITIAL_DESIGNS: DesignItem[] = [
 ];
 
 // Initial realistic completed projects for XFORCE Construction Ltd
-const INITIAL_PROJECTS: ProjectGalleryItem[] = [
+export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
   {
     id: 'e7000000-0000-0000-0000-000000000001',
     title: 'Atlantic Logistics Freight Terminal & Staging Yard',
@@ -713,6 +713,15 @@ class MediaGalleryRepository {
 
     localStore.set(LOCAL_STORAGE_PROJECTS_KEY, updatedList);
     window.dispatchEvent(new CustomEvent('xforce_projects_updated', { detail: projectRecord }));
+    try {
+      fetch('/api/public/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: updatedList.filter((p) => p.isPublished) }),
+      }).catch(() => {});
+    } catch {
+      // Safe exit
+    }
     return { success: true, data: idx >= 0 ? updatedList[idx] : projectRecord };
   }
 
@@ -731,6 +740,15 @@ class MediaGalleryRepository {
     const updated = current.filter((p: ProjectGalleryItem) => p.id !== id);
     localStore.set(LOCAL_STORAGE_PROJECTS_KEY, updated);
     window.dispatchEvent(new CustomEvent('xforce_projects_updated'));
+    try {
+      fetch('/api/public/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: updated.filter((p) => p.isPublished) }),
+      }).catch(() => {});
+    } catch {
+      // Safe exit
+    }
     return { success: true, data: undefined };
   }
 
@@ -760,6 +778,12 @@ class MediaGalleryRepository {
       },
       item.id
     );
+  }
+
+  async resetToDefaultProjects(): Promise<Result<ProjectGalleryItem[]>> {
+    localStore.set(LOCAL_STORAGE_PROJECTS_KEY, INITIAL_PROJECTS);
+    window.dispatchEvent(new CustomEvent('xforce_projects_updated'));
+    return { success: true, data: INITIAL_PROJECTS };
   }
 
   // --------------------------------------------------------------------------

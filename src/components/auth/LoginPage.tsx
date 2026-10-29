@@ -98,11 +98,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     }
   };
 
-  const handleSandboxPersonaSelect = (persona: StaffRoleName | 'inactive') => {
-    switchSandboxPersona(persona);
-    if (onSuccess) {
-      onSuccess();
-    }
+  const handleAutofillCredentials = (autofillEmail: string, autofillPass: string) => {
+    setEmail(autofillEmail);
+    setPassword(autofillPass);
+    setEmailError(null);
+    setPasswordError(null);
+    setErrorMessage(null);
   };
 
   return (
@@ -296,7 +297,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         </div>
       </div>
 
-      {/* Quick Role-Switch Sandbox for Interactive Verification */}
+      {/* Staff Test Credentials & RBAC Verification Panel */}
       <div
         id="dev-auth-persona-switcher"
         className="w-full max-w-md mt-6 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur text-left text-xs"
@@ -304,70 +305,142 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
             <UserCheck className="h-4 w-4 text-orange-600" />
-            <span>Development Verification Personas</span>
+            <span>Authorized Staff Credentials & Roles</span>
           </div>
           <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded font-mono">
-            Module 03
+            RBAC Guard
           </span>
         </div>
         <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
-          Select a role to verify role-based navigation, granular permissions, and unauthorized barrier behavior:
+          Select any registered staff account below to auto-fill its credentials and verify strict authentication and role-based permissions:
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Administrator */}
           <button
             type="button"
-            onClick={() => handleSandboxPersonaSelect('administrator')}
-            className="px-2.5 py-1.5 text-left rounded-md border border-orange-200 dark:border-orange-900/50 bg-orange-50/50 dark:bg-orange-950/20 hover:bg-orange-100 dark:hover:bg-orange-950/40 text-orange-900 dark:text-orange-300 font-medium transition"
+            onClick={() => handleAutofillCredentials('admin@xforce.com', 'XforceAdmin2026!')}
+            className="p-2 text-left rounded-lg border border-orange-200 dark:border-orange-900/50 bg-orange-50/50 dark:bg-orange-950/20 hover:bg-orange-100 dark:hover:bg-orange-950/40 text-orange-900 dark:text-orange-300 transition group"
           >
-            <p className="font-bold text-[11px]">Administrator</p>
-            <p className="text-[9px] text-orange-600/80 dark:text-orange-400/80">Full Access</p>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-[11px]">Administrator</span>
+              <span className="text-[9px] uppercase tracking-wider font-semibold bg-orange-200/60 dark:bg-orange-900/40 px-1 py-0.5 rounded">
+                Full Access
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 truncate">
+              admin@xforce.com
+            </p>
+            <p className="text-[9px] text-orange-700 dark:text-orange-400 font-mono mt-0.5">
+              Pass: XforceAdmin2026!
+            </p>
           </button>
 
+          {/* Sales Manager */}
           <button
             type="button"
-            onClick={() => handleSandboxPersonaSelect('sales_manager')}
-            className="px-2.5 py-1.5 text-left rounded-md border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/40 text-blue-900 dark:text-blue-300 font-medium transition"
+            onClick={() => handleAutofillCredentials('sales.manager@xforce.internal', 'XforceSales2026!')}
+            className="p-2 text-left rounded-lg border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/40 text-blue-900 dark:text-blue-300 transition group"
           >
-            <p className="font-bold text-[11px]">Sales Manager</p>
-            <p className="text-[9px] text-blue-600/80 dark:text-blue-400/80">Quotes & Orders</p>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-[11px]">Sales Manager</span>
+              <span className="text-[9px] uppercase tracking-wider font-semibold bg-blue-200/60 dark:bg-blue-900/40 px-1 py-0.5 rounded">
+                Sales/Quotes
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 truncate">
+              sales.manager@xforce.internal
+            </p>
+            <p className="text-[9px] text-blue-700 dark:text-blue-400 font-mono mt-0.5">
+              Pass: XforceSales2026!
+            </p>
           </button>
 
+          {/* Warehouse Staff */}
           <button
             type="button"
-            onClick={() => handleSandboxPersonaSelect('warehouse_staff')}
-            className="px-2.5 py-1.5 text-left rounded-md border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 font-medium transition"
+            onClick={() => handleAutofillCredentials('yard.supervisor@xforce.internal', 'XforceYard2026!')}
+            className="p-2 text-left rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 transition group"
           >
-            <p className="font-bold text-[11px]">Warehouse</p>
-            <p className="text-[9px] text-emerald-600/80 dark:text-emerald-400/80">Stock & Yard</p>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-[11px]">Warehouse & Yard</span>
+              <span className="text-[9px] uppercase tracking-wider font-semibold bg-emerald-200/60 dark:bg-emerald-900/40 px-1 py-0.5 rounded">
+                Stock/Orders
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 truncate">
+              yard.supervisor@xforce.internal
+            </p>
+            <p className="text-[9px] text-emerald-700 dark:text-emerald-400 font-mono mt-0.5">
+              Pass: XforceYard2026!
+            </p>
           </button>
 
+          {/* POS Cashier */}
           <button
             type="button"
-            onClick={() => handleSandboxPersonaSelect('installation_staff')}
-            className="px-2.5 py-1.5 text-left rounded-md border border-purple-200 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-purple-900 dark:text-purple-300 font-medium transition"
+            onClick={() => handleAutofillCredentials('cashier@xforce.internal', 'XforcePos2026!')}
+            className="p-2 text-left rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-300 transition group"
           >
-            <p className="font-bold text-[11px]">Installation</p>
-            <p className="text-[9px] text-purple-600/80 dark:text-purple-400/80">Site Jobs</p>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-[11px]">POS Cashier</span>
+              <span className="text-[9px] uppercase tracking-wider font-semibold bg-amber-200/60 dark:bg-amber-900/40 px-1 py-0.5 rounded">
+                Counter/POS
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 truncate">
+              cashier@xforce.internal
+            </p>
+            <p className="text-[9px] text-amber-700 dark:text-amber-400 font-mono mt-0.5">
+              Pass: XforcePos2026!
+            </p>
           </button>
 
+          {/* Installation Lead */}
           <button
             type="button"
-            onClick={() => handleSandboxPersonaSelect('pos_staff')}
-            className="px-2.5 py-1.5 text-left rounded-md border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-300 font-medium transition"
+            onClick={() => handleAutofillCredentials('mason.lead@xforce.internal', 'XforceSite2026!')}
+            className="p-2 text-left rounded-lg border border-purple-200 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-purple-900 dark:text-purple-300 transition group"
           >
-            <p className="font-bold text-[11px]">POS Cashier</p>
-            <p className="text-[9px] text-amber-600/80 dark:text-amber-400/80">Counter Sales</p>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-[11px]">Installation Staff</span>
+              <span className="text-[9px] uppercase tracking-wider font-semibold bg-purple-200/60 dark:bg-purple-900/40 px-1 py-0.5 rounded">
+                Site/Jobs
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 truncate">
+              mason.lead@xforce.internal
+            </p>
+            <p className="text-[9px] text-purple-700 dark:text-purple-400 font-mono mt-0.5">
+              Pass: XforceSite2026!
+            </p>
           </button>
 
+          {/* Inactive / Suspended Account (Test Security Barrier) */}
           <button
             type="button"
-            onClick={() => handleSandboxPersonaSelect('inactive')}
-            className="px-2.5 py-1.5 text-left rounded-md border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-rose-900 dark:text-rose-300 font-medium transition"
+            onClick={() => handleAutofillCredentials('former.staff@xforce.internal', 'XforceStaff2026!')}
+            className="p-2 text-left rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-rose-900 dark:text-rose-300 transition group"
           >
-            <p className="font-bold text-[11px]">Inactive Staff</p>
-            <p className="text-[9px] text-rose-600/80 dark:text-rose-400/80">Deactivated</p>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-[11px]">Inactive Staff</span>
+              <span className="text-[9px] uppercase tracking-wider font-semibold bg-rose-200/60 dark:bg-rose-900/40 px-1 py-0.5 rounded text-rose-700 dark:text-rose-300">
+                Barred / Inactive
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 truncate">
+              former.staff@xforce.internal
+            </p>
+            <p className="text-[9px] text-rose-700 dark:text-rose-400 font-mono mt-0.5">
+              Tests Inactive Account Barrier
+            </p>
           </button>
+        </div>
+
+        <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+          <p>
+            <strong className="text-slate-700 dark:text-slate-300">Security Rule:</strong> Wrong passwords (e.g. &quot;wrong&quot;, &quot;123456&quot;) or unregistered emails are strictly rejected. Inactive accounts are blocked with an explicit suspension notice.
+          </p>
         </div>
       </div>
     </div>

@@ -17,10 +17,12 @@ export interface DevPersona {
   profile: DbProfile;
   role: DbRole;
   permissions: string[];
+  password: string;
 }
 
 export const DEV_SANDBOX_PERSONAS: Record<StaffRoleName | 'inactive', DevPersona> = {
   administrator: {
+    password: 'XforceAdmin2026!',
     user: {
       id: '4a56de99-4eb2-4ae2-9e94-b7dceb45976f',
       email: 'admin@xforce.com',
@@ -50,6 +52,7 @@ export const DEV_SANDBOX_PERSONAS: Record<StaffRoleName | 'inactive', DevPersona
     permissions: SYSTEM_ROLE_DEFINITIONS.administrator.permissions,
   },
   sales_manager: {
+    password: 'XforceSales2026!',
     user: {
       id: 'dev-sales-uid-0002',
       email: 'sales.manager@xforce.internal',
@@ -79,6 +82,7 @@ export const DEV_SANDBOX_PERSONAS: Record<StaffRoleName | 'inactive', DevPersona
     permissions: SYSTEM_ROLE_DEFINITIONS.sales_manager.permissions,
   },
   warehouse_staff: {
+    password: 'XforceYard2026!',
     user: {
       id: 'dev-wh-uid-0003',
       email: 'yard.supervisor@xforce.internal',
@@ -108,6 +112,7 @@ export const DEV_SANDBOX_PERSONAS: Record<StaffRoleName | 'inactive', DevPersona
     permissions: SYSTEM_ROLE_DEFINITIONS.warehouse_staff.permissions,
   },
   installation_staff: {
+    password: 'XforceSite2026!',
     user: {
       id: 'dev-inst-uid-0004',
       email: 'mason.lead@xforce.internal',
@@ -137,6 +142,7 @@ export const DEV_SANDBOX_PERSONAS: Record<StaffRoleName | 'inactive', DevPersona
     permissions: SYSTEM_ROLE_DEFINITIONS.installation_staff.permissions,
   },
   pos_staff: {
+    password: 'XforcePos2026!',
     user: {
       id: 'dev-pos-uid-0005',
       email: 'cashier@xforce.internal',
@@ -166,6 +172,7 @@ export const DEV_SANDBOX_PERSONAS: Record<StaffRoleName | 'inactive', DevPersona
     permissions: SYSTEM_ROLE_DEFINITIONS.pos_staff.permissions,
   },
   inactive: {
+    password: 'XforceStaff2026!',
     user: {
       id: 'dev-inactive-uid-0006',
       email: 'former.staff@xforce.internal',

@@ -122,8 +122,27 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
       }
     };
     fetchHomepageData();
+
+    const handleServicesUpdate = () => {
+      const updatedSrvs = publicDataService.getServices();
+      if (updatedSrvs && updatedSrvs.length > 0) {
+        setServices(updatedSrvs);
+      }
+    };
+    const handleProjectsUpdate = () => {
+      const updatedProjs = publicDataService.getProjects();
+      if (updatedProjs && updatedProjs.length > 0) {
+        setFeaturedProjects(updatedProjs.slice(0, 3));
+      }
+    };
+
+    window.addEventListener('xforce_services_updated', handleServicesUpdate);
+    window.addEventListener('xforce_projects_updated', handleProjectsUpdate);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('xforce_services_updated', handleServicesUpdate);
+      window.removeEventListener('xforce_projects_updated', handleProjectsUpdate);
     };
   }, []);
 
@@ -236,6 +255,67 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
             <div>
               <p className="text-xs font-bold text-slate-900 dark:text-white">Direct Factory</p>
               <p className="text-[11px] text-slate-500">Wholesale contractor rates</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Company & Heritage Section */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-left">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-6 sm:p-10 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-300">
+                <Building2 className="h-3.5 w-3.5 text-orange-600" />
+                <span>About {liveSettings.publicBrandName || 'XFORCE Construction Ltd'}</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Pioneering Interlocking Masonry & Turnkey Construction
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                {liveSettings.websiteContent?.aboutDescription ||
+                  'X-FORCE BRICKS and XFORCE Construction Ltd manufacture heavy-duty, high-compression hydraulic-pressed interlocking earth blocks and commercial pavers. We supply materials and deploy certified laying teams to deliver durable, eco-friendly, and cost-effective structures with zero external plastering required.'}
+              </p>
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => onNavigate('/about')}
+                  rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
+                >
+                  Learn More About Us
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onNavigate('/services')}
+                >
+                  Explore Installation Services
+                </Button>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <p className="text-2xl font-black text-orange-600">45 MPa</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white mt-1">Hydraulic Strength</p>
+                <p className="text-[11px] text-slate-500">High mechanical compression</p>
+              </div>
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <p className="text-2xl font-black text-orange-600">40% Faster</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white mt-1">Erection Speed</p>
+                <p className="text-[11px] text-slate-500">Tongue-and-groove precision</p>
+              </div>
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <p className="text-2xl font-black text-orange-600">0mm Mortar</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white mt-1">Dry-Stack Joint</p>
+                <p className="text-[11px] text-slate-500">Eliminates wet mortar bed</p>
+              </div>
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <p className="text-2xl font-black text-orange-600">100%</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white mt-1">Certified Crew</p>
+                <p className="text-[11px] text-slate-500">Master site craftsmen</p>
+              </div>
             </div>
           </div>
         </div>

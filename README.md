@@ -44,9 +44,8 @@ npm install
 # 2. Configure environment
 cp .env.example .env.local
 
-# 3. Start development server (binds to all interfaces on port 3000)
+# 3. Start development server (binds to 0.0.0.0:3000)
 npm run dev
-# Open http://localhost:3000 in your browser
 
 # 4. Build for production & verify TypeScript
 npm run build

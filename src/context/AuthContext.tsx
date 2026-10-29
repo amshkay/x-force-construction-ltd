@@ -36,12 +36,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (stored) {
         return (stored as StaffRoleName | 'inactive');
       }
-      if (!appConfig.supabase.isConfigured || appConfig.isDevelopment) {
-        return 'administrator';
-      }
       return null;
     } catch {
-      return 'administrator';
+      return null;
     }
   });
 
@@ -78,11 +75,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Initialize Supabase Auth session & onAuthStateChange listener
+  // Initialize Auth session & listener
   useEffect(() => {
     let isMounted = true;
 
-    // Check if sandbox persona is active in development mode
+    // Check if sandbox persona is explicitly active
     if (sandboxPersona && DEV_SANDBOX_PERSONAS[sandboxPersona]) {
       const p = DEV_SANDBOX_PERSONAS[sandboxPersona];
       setCurrentUser(p.user as any);
@@ -111,8 +108,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     async function initSession() {
       try {
+        // If Supabase is not configured or offline, check for authenticated local session
         if (!appConfig.supabase.isConfigured) {
-          // If Supabase credentials are not populated in .env, start unauthenticated
+          try {
+            const storedSession = localStorage.getItem('xforce_auth_session');
+            if (storedSession) {
+              const parsed = JSON.parse(storedSession);
+              if (parsed?.user && parsed?.profile && parsed?.role) {
+                if (parsed.profile.status === 'active') {
+                  if (isMounted) {
+                    setCurrentUser(parsed.user);
+                    setProfile(parsed.profile);
+                    setRole(parsed.role);
+                    setPermissions(parsed.permissions || []);
+                    setIsLoading(false);
+                  }
+                  return;
+                }
+              }
+            }
+          } catch {
+            // invalid json, proceed to unauthenticated
+          }
+
+          // Unauthenticated by default
           if (isMounted) {
             setCurrentUser(null);
             setProfile(null);
@@ -209,6 +228,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           localStorage.removeItem('xforce_auth_sandbox_persona');
           localStorage.setItem(
+            'xforce_auth_session',
+            JSON.stringify({
+              user: result.user,
+              profile: result.profile,
+              role: result.role,
+              permissions: result.permissions,
+              timestamp: new Date().toISOString(),
+            })
+          );
+          localStorage.setItem(
             'xforce_auth_user',
             JSON.stringify({
               id: result.user.id,
@@ -245,6 +274,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSandboxPersona(null);
       try {
         localStorage.removeItem('xforce_auth_sandbox_persona');
+        localStorage.removeItem('xforce_auth_session');
         localStorage.removeItem('xforce_auth_user');
       } catch {
         // safe
