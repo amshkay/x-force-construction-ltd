@@ -52,7 +52,7 @@ export const DEFAULT_PUBLIC_SERVICES: PublicServiceItem[] = [
       'Structural guarantee on masonry joints',
     ],
     iconName: 'Wrench',
-    imageUrl: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/assets/services/interlocking-brick-construction.jpg',
     isAvailable: true,
     sortOrder: 1,
   },
@@ -75,7 +75,7 @@ export const DEFAULT_PUBLIC_SERVICES: PublicServiceItem[] = [
       '12-month settlement warranty',
     ],
     iconName: 'Ruler',
-    imageUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/assets/services/pavement-laying.jpg',
     isAvailable: true,
     sortOrder: 2,
   },
@@ -98,7 +98,7 @@ export const DEFAULT_PUBLIC_SERVICES: PublicServiceItem[] = [
       'Customized technical quotation',
     ],
     iconName: 'ShieldCheck',
-    imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/assets/services/site-inspection-surveying.jpg',
     isAvailable: true,
     sortOrder: 3,
   },
@@ -121,7 +121,7 @@ export const DEFAULT_PUBLIC_SERVICES: PublicServiceItem[] = [
       '3-year water repellency warranty',
     ],
     iconName: 'Sparkles',
-    imageUrl: 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/assets/services/interlocking-brick-construction.jpg',
     isAvailable: true,
     sortOrder: 4,
   },
@@ -498,7 +498,41 @@ export class PublicDataService {
   getServices(): PublicServiceItem[] {
     const stored = localStore.get<PublicServiceItem[] | null>('xforce_public_services_v4', null);
     if (stored && Array.isArray(stored) && stored.length > 0) {
-      return stored.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      let modified = false;
+      const sanitized = stored.map((s) => {
+        // Upgrade legacy mock unsplash images to authentic local construction photography
+        if (
+          s.id === 'srv-interlocking-masonry' &&
+          (!s.imageUrl || s.imageUrl.includes('unsplash.com') || s.imageUrl.includes('photo-1578575437130'))
+        ) {
+          modified = true;
+          return { ...s, imageUrl: '/assets/services/interlocking-brick-construction.jpg' };
+        }
+        if (
+          s.id === 'srv-pavement-laying' &&
+          (!s.imageUrl || s.imageUrl.includes('unsplash.com') || s.imageUrl.includes('photo-1590381105924'))
+        ) {
+          modified = true;
+          return { ...s, imageUrl: '/assets/services/pavement-laying.jpg' };
+        }
+        if (
+          s.id === 'srv-site-assessment' &&
+          (!s.imageUrl || s.imageUrl.includes('unsplash.com') || s.imageUrl.includes('photo-1504307651254'))
+        ) {
+          modified = true;
+          return { ...s, imageUrl: '/assets/services/site-inspection-surveying.jpg' };
+        }
+        if (s.id === 'srv-facade-sealing' && (!s.imageUrl || s.imageUrl.includes('unsplash.com'))) {
+          modified = true;
+          return { ...s, imageUrl: '/assets/services/interlocking-brick-construction.jpg' };
+        }
+        return s;
+      });
+
+      if (modified) {
+        localStore.set('xforce_public_services_v4', sanitized);
+      }
+      return sanitized.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     }
     localStore.set('xforce_public_services_v4', DEFAULT_PUBLIC_SERVICES);
     return DEFAULT_PUBLIC_SERVICES;

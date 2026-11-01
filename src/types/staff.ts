@@ -103,4 +103,6 @@ export interface UpdateStaffDTO {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   notes?: string;
+  passwordSetupRequired?: boolean;
+  avatarUrl?: string | null;
 }

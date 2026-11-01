@@ -24,6 +24,36 @@ const supabaseAdmin = (supabaseUrl && supabaseServiceKey && !supabaseUrl.include
     })
   : null;
 
+// Circuit-breaker to avoid hanging or noisy log warnings if Supabase host is offline/unreachable
+let isSupabaseStorageOnline = false;
+let lastSupabaseCheckTime = 0;
+
+async function checkSupabaseReachability(): Promise<boolean> {
+  if (!supabaseAdmin || !supabaseUrl) return false;
+  const now = Date.now();
+  // Cache reachability for 60 seconds
+  if (now - lastSupabaseCheckTime < 60000) {
+    return isSupabaseStorageOnline;
+  }
+  lastSupabaseCheckTime = now;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(`${supabaseUrl}/storage/v1/bucket`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${supabaseServiceKey}`,
+        apikey: supabaseServiceKey,
+      },
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
+    isSupabaseStorageOnline = res.ok || res.status === 401 || res.status === 403;
+  } catch {
+    isSupabaseStorageOnline = false;
+  }
+  return isSupabaseStorageOnline;
+}
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -193,8 +223,9 @@ app.post('/api/media/upload', generalApiLimiter, async (req, res) => {
     let providerUsed = 'persistent-disk';
     const mediaId = crypto.randomUUID();
 
-    // Upload directly to permanent cloud Supabase Storage
-    if (supabaseAdmin) {
+    // Upload to permanent cloud Supabase Storage if reachable
+    const isOnline = await checkSupabaseReachability();
+    if (supabaseAdmin && isOnline) {
       try {
         const { data: uploadData, error: uploadErr } = await supabaseAdmin.storage
           .from(targetBucket)
@@ -225,14 +256,14 @@ app.post('/api/media/upload', generalApiLimiter, async (req, res) => {
               is_published: true,
               created_at: new Date().toISOString(),
             }]);
-          } catch (dbErr) {
-            console.warn('[Server Upload] Supabase media record registration warning:', dbErr);
+          } catch {
+            // Optional table registration
           }
         } else if (uploadErr) {
-          console.warn('[Server Upload] Supabase storage upload warning:', uploadErr.message);
+          isSupabaseStorageOnline = false;
         }
-      } catch (sbErr) {
-        console.warn('[Server Upload] Supabase storage exception:', sbErr);
+      } catch {
+        isSupabaseStorageOnline = false;
       }
     }
 

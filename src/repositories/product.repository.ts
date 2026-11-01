@@ -113,7 +113,7 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: true,
     images: [
-      'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/pavement-laying.jpg',
       'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
     ],
     attributes: { 'Compressive Strength': '45 MPa', Thickness: '80mm', 'Coverage Per m²': '40 blocks' },
@@ -142,7 +142,7 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: true,
     images: [
-      'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/pavement-laying.jpg',
       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
     ],
     attributes: { 'Compressive Strength': '30 MPa', Thickness: '60mm', 'Coverage Per m²': '40 blocks' },
@@ -171,7 +171,7 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: true,
     images: [
-      'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/interlocking-brick-construction.jpg',
       'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
     ],
     attributes: { Dimensions: '220 x 220 x 115mm', 'Thermal Mass': 'High', Joint: 'Mortarless Dry-Stack' },
@@ -557,6 +557,27 @@ export class ProductRepository {
 
     if (products.length === 0) {
       products = localStore.get<Product[]>(LOCAL_STORAGE_PRODUCTS_KEY, this.productsCache);
+    }
+
+    // Auto-upgrade legacy mock images in local cache to authentic local assets
+    let prodsChanged = false;
+    products = products.map((p) => {
+      if (
+        Array.isArray(p.images) &&
+        p.images.some((img) => img.includes('1590381105924') || img.includes('photo-1590381105924'))
+      ) {
+        prodsChanged = true;
+        const newImgs = p.images.map((img) =>
+          img.includes('1590381105924') || img.includes('photo-1590381105924')
+            ? '/assets/services/pavement-laying.jpg'
+            : img
+        );
+        return { ...p, images: newImgs };
+      }
+      return p;
+    });
+    if (prodsChanged) {
+      localStore.set(LOCAL_STORAGE_PRODUCTS_KEY, products);
     }
 
     // Attach category names from categoriesCache if missing

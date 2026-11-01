@@ -36,7 +36,7 @@ const INITIAL_DESIGNS: DesignItem[] = [
     patternStyle: '45° Herringbone',
     applicationType: 'Heavy Vehicle Yard',
     images: [
-      'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/pavement-laying.jpg',
       'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
     ],
     videoUrl: null,
@@ -60,7 +60,7 @@ const INITIAL_DESIGNS: DesignItem[] = [
     patternStyle: 'Stretcher Bond (Dry-Stack)',
     applicationType: 'Exterior Building Wall',
     images: [
-      'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/interlocking-brick-construction.jpg',
       'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
     ],
     videoUrl: null,
@@ -84,7 +84,7 @@ const INITIAL_DESIGNS: DesignItem[] = [
     patternStyle: 'Basket Weave',
     applicationType: 'Pedestrian Walkway & Patio',
     images: [
-      'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/pavement-laying.jpg',
       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
     ],
     videoUrl: null,
@@ -141,18 +141,18 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       'Granite Stone Dust (0-5mm)',
       'Cast Concrete Heavy Kerbs',
     ],
-    coverImageUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+    coverImageUrl: '/assets/services/pavement-laying.jpg',
     galleryMedia: [
       {
         id: 'pm-01-before',
-        url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/site-inspection-surveying.jpg',
         caption: 'Site cleared and graded prior to sub-base compaction and geotextile installation.',
         phase: 'before',
         sortOrder: 1,
       },
       {
         id: 'pm-01-during-1',
-        url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/pavement-laying.jpg',
         caption: 'Laser leveling of sharp sand bedding layer and laying 45° herringbone paver matrix.',
         phase: 'during',
         sortOrder: 2,
@@ -166,7 +166,7 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       },
       {
         id: 'pm-01-after',
-        url: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/pavement-laying.jpg',
         caption: 'Fully operational container staging apron delivered ahead of schedule.',
         phase: 'after',
         sortOrder: 4,
@@ -613,7 +613,18 @@ class MediaGalleryRepository {
 
     const cached = localStore.get<ProjectGalleryItem[]>(LOCAL_STORAGE_PROJECTS_KEY, []);
     if (cached && cached.length > 0) {
-      return { success: true, data: cached };
+      let modified = false;
+      const sanitized = cached.map((p) => {
+        if (p.coverImageUrl?.includes('1590381105924') || p.coverImageUrl?.includes('photo-1590381105924')) {
+          modified = true;
+          return { ...p, coverImageUrl: '/assets/services/pavement-laying.jpg' };
+        }
+        return p;
+      });
+      if (modified) {
+        localStore.set(LOCAL_STORAGE_PROJECTS_KEY, sanitized);
+      }
+      return { success: true, data: sanitized };
     }
 
     localStore.set(LOCAL_STORAGE_PROJECTS_KEY, INITIAL_PROJECTS);

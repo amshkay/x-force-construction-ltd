@@ -138,10 +138,15 @@ export class SupabaseStorageProvider implements IMediaStorageProvider {
       };
     };
 
-    // 1. Try server-side Supabase Storage proxy first (handles service key & cloud persistence)
+    // 1. Try server-side storage proxy first (handles service key, cloud persistence & disk fallback)
     try {
       const serverResult = await uploadViaServerStorage();
-      if (serverResult.provider === 'supabase' || !appConfig.supabase.isConfigured) {
+      if (
+        serverResult.provider === 'supabase' ||
+        serverResult.provider === 'persistent-disk' ||
+        !appConfig.supabase.isConfigured ||
+        (serverResult.url && !serverResult.url.startsWith('data:'))
+      ) {
         return serverResult;
       }
     } catch {

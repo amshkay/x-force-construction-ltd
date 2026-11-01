@@ -287,6 +287,8 @@ export class StaffRepository {
       emergencyContactName: dto.emergencyContactName !== undefined ? dto.emergencyContactName.trim() : current.emergencyContactName,
       emergencyContactPhone: dto.emergencyContactPhone !== undefined ? dto.emergencyContactPhone.trim() : current.emergencyContactPhone,
       notes: dto.notes !== undefined ? dto.notes.trim() : current.notes,
+      passwordSetupRequired: dto.passwordSetupRequired !== undefined ? dto.passwordSetupRequired : current.passwordSetupRequired,
+      avatarUrl: dto.avatarUrl !== undefined ? dto.avatarUrl : current.avatarUrl,
       updatedAt: new Date().toISOString(),
     };
 

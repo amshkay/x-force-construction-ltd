@@ -322,6 +322,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       const updated = await authService.updatePersonalProfile(currentUser.id, data);
       setProfile(updated);
+
+      if (currentUser && data.fullName) {
+        setCurrentUser({
+          ...currentUser,
+          user_metadata: {
+            ...currentUser.user_metadata,
+            full_name: data.fullName,
+          },
+        });
+      }
+
+      try {
+        const storedSession = localStorage.getItem('xforce_auth_session');
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          parsed.profile = updated;
+          if (data.fullName && parsed.user?.user_metadata) {
+            parsed.user.user_metadata.full_name = data.fullName;
+          }
+          localStorage.setItem('xforce_auth_session', JSON.stringify(parsed));
+        }
+
+        const storedUser = localStorage.getItem('xforce_auth_user');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          if (data.fullName) parsedUser.full_name = data.fullName;
+          localStorage.setItem('xforce_auth_user', JSON.stringify(parsedUser));
+        }
+      } catch {
+        // safe
+      }
     },
     [currentUser]
   );

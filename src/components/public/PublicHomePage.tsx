@@ -22,7 +22,7 @@ const FALLBACK_PRODUCTS = [
     variant: '220mm x 220mm x 115mm (Precision Tongue & Groove)',
     sellingPrice: 320,
     unit: 'piece',
-    imageUrl: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/assets/services/interlocking-brick-construction.jpg',
   },
   {
     id: 'b1000000-0000-0000-0000-000000000001',
@@ -31,7 +31,7 @@ const FALLBACK_PRODUCTS = [
     variant: '80mm High-Load Hydraulic Vibratory Pressed',
     sellingPrice: 185,
     unit: 'piece',
-    imageUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/assets/services/pavement-laying.jpg',
   },
   {
     id: 'b1000000-0000-0000-0000-000000000006',
@@ -51,7 +51,7 @@ const FALLBACK_PROJECTS = [
     location: 'Ibeju-Lekki Free Trade Zone, Lagos',
     category: 'Industrial Yard',
     completionDate: 'November 2025',
-    coverImageUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80',
+    coverImageUrl: '/assets/services/pavement-laying.jpg',
   },
   {
     id: 'e7000000-0000-0000-0000-000000000002',
@@ -59,7 +59,7 @@ const FALLBACK_PROJECTS = [
     location: 'Banana Island, Ikoyi, Lagos',
     category: 'Residential Building',
     completionDate: 'January 2026',
-    coverImageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    coverImageUrl: '/assets/services/interlocking-brick-construction.jpg',
   },
   {
     id: 'e7000000-0000-0000-0000-000000000003',
