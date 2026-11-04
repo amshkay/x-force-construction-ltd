@@ -25,15 +25,15 @@ export interface ProductCardProps {
 const getCategoryFallbackImage = (cat: string, prodName: string): string => {
   const text = `${cat} ${prodName}`.toLowerCase();
   if (text.includes('paver') || text.includes('paving') || text.includes('stone')) {
-    return 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80';
+    return '/assets/services/pavement-laying.jpg';
   }
   if (text.includes('brick') || text.includes('hydraform') || text.includes('wall') || text.includes('earth') || text.includes('block')) {
-    return 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80';
+    return '/assets/services/interlocking-brick-construction.jpg';
   }
   if (text.includes('coping') || text.includes('kerb') || text.includes('concrete') || text.includes('cap') || text.includes('tile')) {
-    return 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=800&q=80';
+    return '/assets/services/interlocking-brick-construction.jpg';
   }
-  return 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=800&q=80';
+  return '/assets/services/site-inspection-surveying.jpg';
 };
 
 export const ProductCard: React.FC<ProductCardProps> = ({

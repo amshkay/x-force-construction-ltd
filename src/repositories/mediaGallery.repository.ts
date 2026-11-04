@@ -37,7 +37,6 @@ const INITIAL_DESIGNS: DesignItem[] = [
     applicationType: 'Heavy Vehicle Yard',
     images: [
       '/assets/services/pavement-laying.jpg',
-      'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
     ],
     videoUrl: null,
     colorPalette: [
@@ -61,7 +60,6 @@ const INITIAL_DESIGNS: DesignItem[] = [
     applicationType: 'Exterior Building Wall',
     images: [
       '/assets/services/interlocking-brick-construction.jpg',
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
     ],
     videoUrl: null,
     colorPalette: [
@@ -85,7 +83,6 @@ const INITIAL_DESIGNS: DesignItem[] = [
     applicationType: 'Pedestrian Walkway & Patio',
     images: [
       '/assets/services/pavement-laying.jpg',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
     ],
     videoUrl: null,
     colorPalette: [
@@ -107,7 +104,7 @@ const INITIAL_DESIGNS: DesignItem[] = [
     patternStyle: 'Soldier Course',
     applicationType: 'Garden Edging & Trims',
     images: [
-      'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/interlocking-brick-construction.jpg',
     ],
     videoUrl: null,
     colorPalette: [
@@ -159,7 +156,7 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       },
       {
         id: 'pm-01-during-2',
-        url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/pavement-laying.jpg',
         caption: 'Vibratory plate compaction with rubber protective mat to lock kiln-dried joint sand.',
         phase: 'during',
         sortOrder: 3,
@@ -194,25 +191,25 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       'High-Strength Reinforced Grout',
       'Breathable Siloxane Water-Repellent Sealant',
     ],
-    coverImageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+    coverImageUrl: '/assets/services/interlocking-brick-construction.jpg',
     galleryMedia: [
       {
         id: 'pm-02-before',
-        url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/site-inspection-surveying.jpg',
         caption: 'Engineered raft foundation completed with vertical starter dowels positioned for block alignment.',
         phase: 'before',
         sortOrder: 1,
       },
       {
         id: 'pm-02-during',
-        url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/interlocking-brick-construction.jpg',
         caption: 'Dry-stack assembly of interlocking blocks with rubber mallets ensuring 0mm mortar joint tolerance.',
         phase: 'during',
         sortOrder: 2,
       },
       {
         id: 'pm-02-after',
-        url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/interlocking-brick-construction.jpg',
         caption: 'Completed residence showcasing rich natural earth tones and clean architectural shadow lines.',
         phase: 'after',
         sortOrder: 3,
@@ -240,25 +237,25 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       'Precast Concrete Saddleback Wall Coping (300mm)',
       '12mm High-Yield Reinforcement Rebar',
     ],
-    coverImageUrl: 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
+    coverImageUrl: '/assets/services/site-inspection-surveying.jpg',
     galleryMedia: [
       {
         id: 'pm-03-before',
-        url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/site-inspection-surveying.jpg',
         caption: 'Trench excavation and lean concrete blinding along 1.2km estate perimeter contour.',
         phase: 'before',
         sortOrder: 1,
       },
       {
         id: 'pm-03-during',
-        url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/interlocking-brick-construction.jpg',
         caption: 'Rapid interlocking block wall erection by trained XFORCE certified installation crew.',
         phase: 'during',
         sortOrder: 2,
       },
       {
         id: 'pm-03-after',
-        url: 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/site-inspection-surveying.jpg',
         caption: 'Finished perimeter security wall with decorative concrete coping.',
         phase: 'after',
         sortOrder: 3,
@@ -286,18 +283,18 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       'Sub-base Crushed Stone Granite',
       'Drainage Channel Precast Gutters',
     ],
-    coverImageUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+    coverImageUrl: '/assets/services/pavement-laying.jpg',
     galleryMedia: [
       {
         id: 'pm-04-before',
-        url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/site-inspection-surveying.jpg',
         caption: 'Demolition and extraction of aged cracked asphalt surface.',
         phase: 'before',
         sortOrder: 1,
       },
       {
         id: 'pm-04-during',
-        url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
+        url: '/assets/services/pavement-laying.jpg',
         caption: 'Crushed stone aggregate compaction and bedding screed alignment.',
         phase: 'during',
         sortOrder: 2,
@@ -318,7 +315,7 @@ const INITIAL_MEDIA_ASSETS: MediaAsset[] = [
     storageProvider: 'supabase',
     storageBucket: 'project-media',
     storagePath: 'projects/atlantic-terminal-yard.jpg',
-    publicUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+    publicUrl: '/assets/services/pavement-laying.jpg',
     fileName: 'atlantic-terminal-yard.jpg',
     mimeType: 'image/jpeg',
     fileSize: 1420500,
@@ -335,7 +332,7 @@ const INITIAL_MEDIA_ASSETS: MediaAsset[] = [
     storageProvider: 'supabase',
     storageBucket: 'project-media',
     storagePath: 'designs/45-degree-herringbone-pave.jpg',
-    publicUrl: 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
+    publicUrl: '/assets/services/pavement-laying.jpg',
     fileName: '45-degree-herringbone-pave.jpg',
     mimeType: 'image/jpeg',
     fileSize: 1890300,
@@ -352,7 +349,7 @@ const INITIAL_MEDIA_ASSETS: MediaAsset[] = [
     storageProvider: 'supabase',
     storageBucket: 'project-media',
     storagePath: 'projects/palms-villa-ikoyi.jpg',
-    publicUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+    publicUrl: '/assets/services/interlocking-brick-construction.jpg',
     fileName: 'palms-villa-ikoyi.jpg',
     mimeType: 'image/jpeg',
     fileSize: 2150000,
@@ -369,7 +366,7 @@ const INITIAL_MEDIA_ASSETS: MediaAsset[] = [
     storageProvider: 'supabase',
     storageBucket: 'business-assets',
     storagePath: 'designs/basket-weave-terrace.jpg',
-    publicUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+    publicUrl: '/assets/services/pavement-laying.jpg',
     fileName: 'basket-weave-terrace.jpg',
     mimeType: 'image/jpeg',
     fileSize: 1340100,

@@ -134,18 +134,18 @@ export const FeaturedProjectsManagementModal: React.FC<FeaturedProjectsManagemen
         'Cast Concrete Retaining Kerbs',
         'Sharp River Sand Screed',
       ],
-      coverImageUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+      coverImageUrl: '/assets/services/pavement-laying.jpg',
       galleryMedia: [
         {
           id: `gm-${Date.now()}-1`,
-          url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80',
+          url: '/assets/services/site-inspection-surveying.jpg',
           caption: 'Sub-base compaction and perimeter kerb alignment.',
           phase: 'before',
           sortOrder: 1,
         },
         {
           id: `gm-${Date.now()}-2`,
-          url: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+          url: '/assets/services/pavement-laying.jpg',
           caption: 'Completed project installation sign-off.',
           phase: 'after',
           sortOrder: 2,
@@ -480,7 +480,7 @@ export const FeaturedProjectsManagementModal: React.FC<FeaturedProjectsManagemen
                     referrerPolicy="no-referrer"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80';
+                        '/assets/services/pavement-laying.jpg';
                     }}
                   />
                 ) : (

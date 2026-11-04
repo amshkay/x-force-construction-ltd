@@ -97,19 +97,19 @@ export const PublicDesignsPage: React.FC<PublicDesignsPageProps> = ({
       />
 
       {/* Main Tab Toggle: Showcase Gallery vs Laying Patterns */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-2 min-w-full sm:min-w-0">
           <button
             type="button"
             onClick={() => setActiveTab('designs')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition whitespace-nowrap shrink-0 ${
               activeTab === 'designs'
                 ? 'bg-orange-600 text-white shadow'
                 : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
             }`}
           >
             <Sparkles className="h-4 w-4" />
-            Design Inspiration Showcase
+            <span>Design Inspirations</span>
             <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px]">
               {designItems.length}
             </span>
@@ -118,14 +118,14 @@ export const PublicDesignsPage: React.FC<PublicDesignsPageProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('patterns')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition whitespace-nowrap shrink-0 ${
               activeTab === 'patterns'
                 ? 'bg-orange-600 text-white shadow'
                 : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
             }`}
           >
             <Layers className="h-4 w-4" />
-            Laying Patterns & Bonds
+            <span>Laying Patterns & Bonds</span>
             <span className="ml-1 rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] text-slate-700 dark:text-slate-300">
               {patterns.length}
             </span>
@@ -173,7 +173,7 @@ export const PublicDesignsPage: React.FC<PublicDesignsPageProps> = ({
                 const coverImage =
                   design.images && design.images.length > 0
                     ? design.images[0]
-                    : 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80';
+                    : '/assets/services/interlocking-brick-construction.jpg';
 
                 return (
                   <div

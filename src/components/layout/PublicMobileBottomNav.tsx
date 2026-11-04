@@ -25,6 +25,11 @@ export const PublicMobileBottomNav: React.FC<PublicMobileBottomNavProps> = ({
     if (onRouteChange) {
       onRouteChange(path);
     }
+    try {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } catch {
+      window.scrollTo(0, 0);
+    }
   };
 
   const handleMenuClick = () => {
@@ -34,6 +39,17 @@ export const PublicMobileBottomNav: React.FC<PublicMobileBottomNavProps> = ({
       window.dispatchEvent(new CustomEvent('xforce_toggle_mobile_menu'));
     }
   };
+
+  const isExtendedRouteActive = [
+    '/projects',
+    '/designs',
+    '/contact',
+    '/track',
+    '/request',
+    '/customer/login',
+    '/customer/register',
+    '/auth/login',
+  ].includes(currentRoute);
 
   const navTabs = [
     {
@@ -70,7 +86,7 @@ export const PublicMobileBottomNav: React.FC<PublicMobileBottomNavProps> = ({
     <nav
       id="public-mobile-bottom-nav"
       aria-label="Mobile Navigation Bar"
-      className="fixed bottom-0 inset-x-0 z-40 block md:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800/90 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
+      className="fixed bottom-0 inset-x-0 z-40 block lg:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800/90 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
     >
       <div className="grid grid-cols-5 h-16 max-w-lg mx-auto px-1">
         {navTabs.map((tab) => {
@@ -82,7 +98,7 @@ export const PublicMobileBottomNav: React.FC<PublicMobileBottomNavProps> = ({
               type="button"
               onClick={() => handleNav(tab.path)}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 transition-all select-none relative',
+                'min-h-[44px] flex flex-col items-center justify-center gap-1 transition-all select-none relative',
                 tab.isActive
                   ? 'text-orange-600 dark:text-orange-500 font-bold'
                   : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
@@ -102,14 +118,24 @@ export const PublicMobileBottomNav: React.FC<PublicMobileBottomNavProps> = ({
           id="tab-mobile-more-menu"
           type="button"
           onClick={handleMenuClick}
-          className="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400 transition-all select-none relative"
+          className={cn(
+            'min-h-[44px] flex flex-col items-center justify-center gap-1 transition-all select-none relative',
+            isExtendedRouteActive
+              ? 'text-orange-600 dark:text-orange-500 font-bold'
+              : 'text-slate-500 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400'
+          )}
           aria-label="Open complete menu drawer"
         >
+          {isExtendedRouteActive && (
+            <span className="absolute top-0 inset-x-4 h-0.5 bg-orange-600 dark:bg-orange-500 rounded-full" />
+          )}
           <div className="relative">
             <Menu className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-600" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-600 animate-pulse" />
           </div>
-          <span className="text-[10px] tracking-tight font-medium">Menu</span>
+          <span className="text-[10px] tracking-tight font-medium">
+            {isExtendedRouteActive ? 'More · Active' : 'Menu'}
+          </span>
         </button>
       </div>
     </nav>

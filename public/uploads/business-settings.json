@@ -1,0 +1,35 @@
+{
+  "id": "current_business",
+  "company_name": "XFORCE CONSTRUCTION LTD",
+  "public_brand_name": "X-FORCE BRICKS",
+  "slogan": "Building Excellence. Finishing with Pride.",
+  "logo_url": "https://tfomrkclierebtioghco.supabase.co/storage/v1/object/public/business-assets/branding/xforce-brand-logo-1793832299504-wh6v6.png",
+  "favicon_url": null,
+  "primary_brand_color": "#ea580c",
+  "secondary_brand_color": "#0f172a",
+  "accent_brand_color": "#f97316",
+  "currency_code": "NGN",
+  "currency_symbol": "₦",
+  "country_code": "NG",
+  "hero_text": "Engineered Interlocking Bricks & Architectural Construction",
+  "hero_images": [],
+  "website_content": {
+    "heroHeading": "Engineered Interlocking Bricks & Architectural Construction"
+  },
+  "branding": {
+    "logoUrl": "https://tfomrkclierebtioghco.supabase.co/storage/v1/object/public/business-assets/branding/xforce-brand-logo-1793832299504-wh6v6.png",
+    "faviconUrl": null,
+    "primaryBrandColor": "#ea580c",
+    "secondaryBrandColor": "#0f172a",
+    "accentBrandColor": "#f97316"
+  },
+  "default_customer_prefix": "XFC",
+  "default_request_prefix": "XFR",
+  "default_quotation_prefix": "XFQ",
+  "default_order_prefix": "XFO",
+  "default_tracking_prefix": "XFT",
+  "default_payment_prefix": "XFP",
+  "default_invoice_prefix": "XFI",
+  "version": 2,
+  "updated_at": "2026-11-04T22:44:59.805Z"
+}

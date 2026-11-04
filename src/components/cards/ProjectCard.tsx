@@ -20,15 +20,15 @@ export interface ProjectCardProps {
 const getProjectFallbackImage = (cat: string, title: string): string => {
   const text = `${cat} ${title}`.toLowerCase();
   if (text.includes('industrial') || text.includes('commercial') || text.includes('yard') || text.includes('road') || text.includes('terminal')) {
-    return 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80';
+    return '/assets/services/pavement-laying.jpg';
   }
   if (text.includes('residential') || text.includes('villa') || text.includes('facade') || text.includes('house')) {
-    return 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+    return '/assets/services/interlocking-brick-construction.jpg';
   }
   if (text.includes('perimeter') || text.includes('fencing') || text.includes('wall') || text.includes('gatehouse') || text.includes('enclosure')) {
-    return 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=800&q=80';
+    return '/assets/services/interlocking-brick-construction.jpg';
   }
-  return 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=800&q=80';
+  return '/assets/services/site-inspection-surveying.jpg';
 };
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({

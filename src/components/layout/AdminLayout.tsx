@@ -504,7 +504,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               id="btn-mobile-sidebar-toggle"
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden"
               aria-label="Open navigation menu"
             >
               <Menu className="h-5 w-5" />
@@ -706,7 +706,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto py-4 space-y-4 text-left">
+            <div
+              className="flex-1 overflow-y-auto py-4 space-y-4 text-left overscroll-contain touch-pan-y"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               {navigationGroups.map((group, idx) => (
                 <div key={idx} className="space-y-1">
                   <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -736,7 +739,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               ))}
             </div>
             {onSwitchToPublic && (
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="pt-3 pb-8 sm:pb-3 border-t border-slate-100 dark:border-slate-800 shrink-0">
                 <button
                   type="button"
                   onClick={() => {

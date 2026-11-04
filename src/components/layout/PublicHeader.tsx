@@ -116,6 +116,11 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
       onRouteChange(path);
     }
     setMobileMenuOpen(false);
+    try {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } catch {
+      window.scrollTo(0, 0);
+    }
   };
 
   const handleWhatsAppHelp = () => {
@@ -293,8 +298,11 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
               </button>
             </div>
 
-            {/* Scrollable Navigation Items */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {/* Scrollable Navigation Items with mobile touch containment */}
+            <div
+              className="flex-1 overflow-y-auto p-4 space-y-6 overscroll-contain touch-pan-y"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               {/* Primary Pages Group */}
               <div className="space-y-1">
                 <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
@@ -391,8 +399,8 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
               </div>
             </div>
 
-            {/* Quick Contact Footer */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 space-y-2">
+            {/* Quick Contact Footer with Safe Area Bottom Padding */}
+            <div className="p-4 pb-8 sm:pb-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 space-y-2 shrink-0">
               <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
                 <span className="font-semibold">Direct Factory Line:</span>
                 <a href={`tel:${publicSettings.contactPhone}`} className="text-orange-600 font-bold hover:underline">

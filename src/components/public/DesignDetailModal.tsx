@@ -41,7 +41,7 @@ export const DesignDetailModal: React.FC<DesignDetailModalProps> = ({
   if (!design) return null;
 
   const images = design.images || [];
-  const currentImage = images[activeImageIndex] || 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80';
+  const currentImage = images[activeImageIndex] || '/assets/services/interlocking-brick-construction.jpg';
 
   const handleShare = async () => {
     const res = await sharePublicItem({

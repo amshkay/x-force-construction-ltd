@@ -70,9 +70,9 @@ export const defaultFullBusinessSettings: FullBusinessSettings = {
     heroSubheading:
       'Premium hydraulic-cured paving stones, decorative facing bricks, and turnkey site installation by master masons.',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1600&q=80',
+      '/assets/services/pavement-laying.jpg',
     secondaryHeroImageUrl:
-      'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1600&q=80',
+      '/assets/services/interlocking-brick-construction.jpg',
     homepageIntro:
       'X-FORCE BRICKS delivers world-class masonry engineered to withstand demanding climate conditions while elevating architectural beauty.',
     aboutDescription:

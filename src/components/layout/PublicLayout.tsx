@@ -17,7 +17,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
   onRouteChange,
 }) => {
   return (
-    <div className="flex min-h-screen flex-col bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100 transition-colors pb-16 md:pb-0">
+    <div className="flex min-h-screen flex-col bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100 transition-colors pb-16 lg:pb-0">
       <PublicSeoHead currentRoute={currentRoute} />
       <PublicHeader currentRoute={currentRoute} onRouteChange={onRouteChange} />
       <main className="flex-1">{children}</main>

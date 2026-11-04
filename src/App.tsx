@@ -393,13 +393,28 @@ function MainApplication() {
     if (route === '/auth/login' || route === '/login') {
       setViewMode('auth');
       setAuthScreen('login');
+      try {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } catch {
+        window.scrollTo(0, 0);
+      }
       return;
     }
     if (route === '/admin') {
       setViewMode('admin');
+      try {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } catch {
+        window.scrollTo(0, 0);
+      }
       return;
     }
     setPublicRoute(route);
+    try {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } catch {
+      window.scrollTo(0, 0);
+    }
   };
 
   // 1. AUTHENTICATION SCREENS (Module 03)

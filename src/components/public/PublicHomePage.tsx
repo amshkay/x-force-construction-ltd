@@ -40,7 +40,7 @@ const FALLBACK_PRODUCTS = [
     variant: 'Water-shedding dual drip throat profile',
     sellingPrice: 1850,
     unit: 'piece',
-    imageUrl: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/assets/services/interlocking-brick-construction.jpg',
   },
 ];
 
@@ -67,7 +67,7 @@ const FALLBACK_PROJECTS = [
     location: 'Epe Resort Expressway, Lagos',
     category: 'Perimeter Wall',
     completionDate: 'December 2025',
-    coverImageUrl: 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=800&q=80',
+    coverImageUrl: '/assets/services/site-inspection-surveying.jpg',
   },
 ];
 
@@ -151,21 +151,31 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
   const activeServices = services.length > 0 ? services : DEFAULT_PUBLIC_SERVICES;
   const displayServices = activeServices.filter((s) => s.isAvailable !== false).slice(0, 3);
 
-  const fallbackHeroUrl = 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1600&q=80';
+  const fallbackHeroUrl = '/assets/services/pavement-laying.jpg';
   const heroImageUrl = !heroImageError && liveSettings.websiteContent?.heroImageUrl
     ? liveSettings.websiteContent.heroImageUrl
     : fallbackHeroUrl;
 
+  const quickNavLinks = [
+    { label: 'Products', path: '/products', icon: '🧱', desc: 'Catalog & Pavers' },
+    { label: 'Services', path: '/services', icon: '🔨', desc: 'Laying & Survey' },
+    { label: 'Projects', path: '/projects', icon: '🏛️', desc: 'Completed Sites' },
+    { label: 'Designs', path: '/designs', icon: '📐', desc: 'Patterns & Bonds' },
+    { label: 'About Us', path: '/about', icon: 'ℹ️', desc: 'Factory & Heritage' },
+    { label: 'Contact', path: '/contact', icon: '📞', desc: 'Direct Desk' },
+    { label: 'Track Order', path: '/track', icon: '🔍', desc: 'Status Check' },
+  ];
+
   return (
-    <div className="space-y-16 sm:space-y-24 py-8 sm:py-12" id="public-home-page">
+    <div className="space-y-12 sm:space-y-20 py-6 sm:py-10" id="public-home-page">
       {/* 1. Hero Section (Section 19) */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-300 mb-6">
+        <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-300 mb-4 sm:mb-6">
           <Sparkles className="h-3.5 w-3.5 text-orange-600" />
-          <span>{liveSettings.slogan || liveSettings.websiteContent?.publicSlogan || 'Engineered For Strength. Crafted For Distinction.'}</span>
+          <span className="truncate max-w-[280px] xs:max-w-none">{liveSettings.slogan || liveSettings.websiteContent?.publicSlogan || 'Engineered For Strength. Crafted For Distinction.'}</span>
         </div>
 
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white max-w-4xl mx-auto leading-tight">
+        <h1 className="text-2xl xs:text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white max-w-4xl mx-auto leading-tight">
           {liveSettings.websiteContent?.heroHeading || (
             <>
               Engineered Interlocking Bricks &{' '}
@@ -176,16 +186,17 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
           )}
         </h1>
 
-        <p className="mt-5 text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
           {liveSettings.websiteContent?.heroSubheading || liveSettings.description}
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-md mx-auto">
           <Button
             size="lg"
             variant="primary"
             onClick={() => onNavigate('/request')}
             rightIcon={<ArrowRight className="h-4 w-4" />}
+            className="w-full sm:w-auto justify-center"
           >
             Request Instant Quotation
           </Button>
@@ -193,13 +204,41 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
             size="lg"
             variant="outline"
             onClick={() => onNavigate('/products')}
+            className="w-full sm:w-auto justify-center"
           >
             Browse Products Catalog
           </Button>
         </div>
 
+        {/* Mobile Quick-Jump Directory Strip (Visible on mobile/tablet to ensure instant discoverability) */}
+        <div className="mt-6 lg:hidden">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2.5 text-left px-1">
+            Quick Directory & Offerings
+          </p>
+          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-2 text-left">
+            {quickNavLinks.map((item) => (
+              <button
+                key={item.path}
+                type="button"
+                onClick={() => onNavigate(item.path)}
+                className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 shadow-2xs hover:border-orange-500 active:scale-[0.98] transition-all"
+              >
+                <span className="text-base select-none shrink-0">{item.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {item.label}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    {item.desc}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Hero Visual Card Showcase */}
-        <div className="mt-12 relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl max-w-5xl mx-auto h-64 sm:h-80 md:h-96">
+        <div className="mt-8 sm:mt-12 relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl max-w-5xl mx-auto h-64 sm:h-80 md:h-96">
           <img
             key={heroImageUrl}
             src={heroImageUrl}
@@ -211,11 +250,11 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
             className="w-full h-full object-cover transition-all duration-500"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-6 sm:p-8 text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-orange-600/90 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-white w-fit mb-2">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col justify-end p-4 sm:p-6 md:p-8 text-left">
+            <div className="inline-flex items-center gap-2 rounded-full bg-orange-600/90 backdrop-blur-sm px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-semibold text-white w-fit mb-1.5 sm:mb-2">
               <span>Hydraulic-Cured 45 MPa Precision Blocks</span>
             </div>
-            <h3 className="text-lg sm:text-2xl font-bold text-white drop-shadow-sm">
+            <h3 className="text-base sm:text-xl md:text-2xl font-bold text-white drop-shadow-sm leading-tight">
               Mortarless Interlocking Dry-Stack System
             </h3>
             <p className="text-xs sm:text-sm text-slate-200 max-w-xl line-clamp-2 mt-1">
@@ -225,7 +264,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
         </div>
 
         {/* Value Highlights */}
-        <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left">
+        <div className="mt-8 sm:mt-12 grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto text-left">
           <div className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 dark:border-slate-800 dark:bg-slate-900/40">
             <ShieldCheck className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
             <div>
@@ -389,7 +428,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {displayServices.map((srv) => (
             <ServiceCard
               key={srv.id}

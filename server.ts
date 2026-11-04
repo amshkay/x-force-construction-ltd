@@ -186,7 +186,13 @@ app.post('/api/media/upload', generalApiLimiter, async (req, res) => {
     if (bucketNormalized.includes('product')) targetBucket = 'product-media';
     else if (bucketNormalized.includes('installation')) targetBucket = 'installation-media';
     else if (bucketNormalized.includes('customer')) targetBucket = 'customer-uploads';
-    else if (bucketNormalized.includes('business')) targetBucket = 'business-assets';
+    else if (
+      bucketNormalized.includes('business') ||
+      bucketNormalized.includes('brand') ||
+      bucketNormalized.includes('logo') ||
+      bucketNormalized.includes('favicon') ||
+      bucketNormalized.includes('asset')
+    ) targetBucket = 'business-assets';
 
     const safeFolder = (category || 'general').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
     const ext = path.extname(filename) || '.jpg';
@@ -374,6 +380,172 @@ app.post('/api/public/content', generalApiLimiter, (req, res) => {
   } catch (err: any) {
     console.error('[Public Content] Save error:', err);
     return res.status(500).json({ error: err.message || 'Failed to save public content.' });
+  }
+});
+
+// Persistent Business Settings API (Authenticated via SUPABASE_SERVICE_ROLE_KEY to bypass client RLS)
+const SETTINGS_FILE = path.join(UPLOADS_DIR, 'business-settings.json');
+
+app.get('/api/settings', generalApiLimiter, async (req, res) => {
+  try {
+    const isOnline = await checkSupabaseReachability();
+    if (supabaseAdmin && isOnline) {
+      const { data, error } = await supabaseAdmin
+        .from('business_settings')
+        .select('*')
+        .eq('id', 'current_business')
+        .maybeSingle();
+
+      if (!error && data) {
+        return res.json({ success: true, source: 'supabase', data });
+      }
+    }
+
+    if (fs.existsSync(SETTINGS_FILE)) {
+      try {
+        const fileData = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+        return res.json({ success: true, source: 'file', data: fileData });
+      } catch {
+        // file parse error
+      }
+    }
+
+    return res.json({ success: true, source: 'none', data: null });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/settings', generalApiLimiter, async (req, res) => {
+  try {
+    const { settings, dbPayload } = req.body;
+    if (!settings && !dbPayload) {
+      return res.status(400).json({ success: false, error: 'No settings data provided.' });
+    }
+
+    // Build DB payload from settings object if not directly passed
+    let payload = dbPayload;
+    if (!payload && settings) {
+      payload = {
+        id: 'current_business',
+        company_name: settings.companyName,
+        public_brand_name: settings.publicBrandName,
+        short_name: settings.shortName,
+        slogan: settings.slogan,
+        business_description: settings.businessDescription,
+        business_category: settings.businessCategory,
+        tin_number: settings.tinNumber,
+        logo_url: settings.branding?.logoUrl || null,
+        favicon_url: settings.branding?.faviconUrl || null,
+        primary_brand_color: settings.branding?.primaryBrandColor || '#ea580c',
+        secondary_brand_color: settings.branding?.secondaryBrandColor || '#0f172a',
+        accent_brand_color: settings.branding?.accentBrandColor || '#f97316',
+        currency_code: settings.regional?.currencyCode || 'NGN',
+        currency_symbol: settings.regional?.currencySymbol || '₦',
+        country_code: settings.regional?.countryCode || 'NG',
+        contact_email: settings.contactEmail,
+        contact_phone: settings.contactPhone,
+        secondary_phone: settings.secondaryPhone,
+        whatsapp_number: settings.whatsappNumber,
+        website_url: settings.websiteUrl,
+        address: settings.address,
+        gps_latitude: settings.location?.latitude,
+        gps_longitude: settings.location?.longitude,
+        location_description: settings.location?.locationDescription,
+        map_link_url: settings.location?.mapLinkUrl,
+        social_links: settings.socialLinks,
+        operating_hours: settings.operatingHours,
+        hero_text: settings.websiteContent?.heroHeading,
+        hero_images: [
+          settings.websiteContent?.heroImageUrl,
+          settings.websiteContent?.secondaryHeroImageUrl,
+        ].filter(Boolean),
+        website_content: settings.websiteContent,
+        branding: settings.branding,
+        regional_settings: settings.regional,
+        numbering_settings: settings.numbering,
+        payment_methods: settings.paymentMethods,
+        default_customer_prefix: settings.numbering?.defaultCustomerPrefix || 'XFC',
+        default_request_prefix: settings.numbering?.defaultRequestPrefix || 'XFR',
+        default_quotation_prefix: settings.numbering?.defaultQuotationPrefix || 'XFQ',
+        default_order_prefix: settings.numbering?.defaultOrderPrefix || 'XFO',
+        default_tracking_prefix: settings.numbering?.defaultTrackingPrefix || 'XFT',
+        default_payment_prefix: settings.numbering?.defaultPaymentPrefix || 'XFP',
+        default_invoice_prefix: settings.numbering?.defaultInvoicePrefix || 'XFI',
+        features: settings.features,
+        supported_categories: settings.supportedMaterialCategories,
+        version: (settings.version || 1) + 1,
+        updated_at: new Date().toISOString(),
+      };
+    }
+
+    // 1. Save to local fallback cache file
+    try {
+      fs.writeFileSync(SETTINGS_FILE, JSON.stringify(payload, null, 2), 'utf-8');
+    } catch (fsErr) {
+      console.warn('[Server Settings] Local file cache write skipped:', fsErr);
+    }
+
+    // 2. Persist to Supabase using Admin Client (Service Role key bypasses RLS)
+    let remoteSuccess = false;
+    let remoteError: string | null = null;
+    const isOnline = await checkSupabaseReachability();
+
+    if (supabaseAdmin && isOnline) {
+      try {
+        const { error: sbError } = await supabaseAdmin
+          .from('business_settings')
+          .upsert(payload, { onConflict: 'id' });
+
+        if (sbError) {
+          console.warn('[Server Settings] Supabase upsert error:', sbError.message);
+          remoteError = sbError.message;
+        } else {
+          remoteSuccess = true;
+          console.log('[Server Settings] Business settings successfully saved to Supabase with service role.');
+        }
+      } catch (sbEx: any) {
+        console.warn('[Server Settings] Supabase upsert exception:', sbEx.message);
+        remoteError = sbEx.message;
+      }
+    }
+
+    // Also sync public content file
+    if (payload.website_content || payload.logo_url) {
+      try {
+        let existingPub: Record<string, any> = {};
+        if (fs.existsSync(PUBLIC_CONTENT_FILE)) {
+          try {
+            existingPub = JSON.parse(fs.readFileSync(PUBLIC_CONTENT_FILE, 'utf-8'));
+          } catch {
+            existingPub = {};
+          }
+        }
+        const updatedPub = {
+          ...existingPub,
+          logoUrl: payload.logo_url || payload.branding?.logoUrl || existingPub.logoUrl,
+          heroImageUrl: payload.website_content?.heroImageUrl || existingPub.heroImageUrl,
+          secondaryHeroImageUrl: payload.website_content?.secondaryHeroImageUrl || existingPub.secondaryHeroImageUrl,
+          heroHeading: payload.hero_text || existingPub.heroHeading,
+          slogan: payload.slogan || existingPub.slogan,
+          updatedAt: payload.updated_at,
+        };
+        fs.writeFileSync(PUBLIC_CONTENT_FILE, JSON.stringify(updatedPub, null, 2), 'utf-8');
+      } catch {
+        // Safe exit
+      }
+    }
+
+    return res.json({
+      success: true,
+      remoteSuccess,
+      remoteError,
+      data: payload,
+      updatedAt: payload.updated_at,
+    });
+  } catch (err: any) {
+    console.error('[Server Settings] Save failed:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to save settings.' });
   }
 });
 

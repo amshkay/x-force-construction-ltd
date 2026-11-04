@@ -1171,7 +1171,7 @@ export const BusinessSettingsPanel: React.FC = () => {
                   <div className="relative rounded-xl overflow-hidden h-44 sm:h-52 border border-slate-200 dark:border-slate-800 shadow-md">
                     <img
                       key={formData.websiteContent.heroImageUrl || 'default'}
-                      src={formData.websiteContent.heroImageUrl || 'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1600&q=80'}
+                      src={formData.websiteContent.heroImageUrl || '/assets/services/pavement-laying.jpg'}
                       alt="Hero Live Preview"
                       className="w-full h-full object-cover"
                     />

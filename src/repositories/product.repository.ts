@@ -114,7 +114,6 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isFeatured: true,
     images: [
       '/assets/services/pavement-laying.jpg',
-      'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
     ],
     attributes: { 'Compressive Strength': '45 MPa', Thickness: '80mm', 'Coverage Per m²': '40 blocks' },
     sortOrder: 1,
@@ -143,7 +142,6 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isFeatured: true,
     images: [
       '/assets/services/pavement-laying.jpg',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
     ],
     attributes: { 'Compressive Strength': '30 MPa', Thickness: '60mm', 'Coverage Per m²': '40 blocks' },
     sortOrder: 2,
@@ -172,7 +170,6 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isFeatured: true,
     images: [
       '/assets/services/interlocking-brick-construction.jpg',
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
     ],
     attributes: { Dimensions: '220 x 220 x 115mm', 'Thermal Mass': 'High', Joint: 'Mortarless Dry-Stack' },
     sortOrder: 3,
@@ -200,7 +197,7 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: false,
     images: [
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/interlocking-brick-construction.jpg',
     ],
     attributes: { Core: 'Dual 75mm Diameter', Dimensions: '220 x 220 x 115mm' },
     sortOrder: 4,
@@ -228,7 +225,7 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: false,
     images: [
-      'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/pavement-laying.jpg',
     ],
     attributes: { Dimensions: '125 x 250 x 500mm', Grade: 'Grade 30 Vibrated' },
     sortOrder: 5,
@@ -256,7 +253,7 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: false,
     images: [
-      'https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/interlocking-brick-construction.jpg',
     ],
     attributes: { Width: '300mm', Profile: 'Saddleback Peak' },
     sortOrder: 6,
@@ -284,7 +281,7 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: false,
     images: [
-      'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/pavement-laying.jpg',
     ],
     attributes: { Volume: '20 Metric Tonnes', Purity: 'Washed, Low Silt (<3%)' },
     sortOrder: 7,
@@ -312,7 +309,7 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: false,
     images: [
-      'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
+      '/assets/services/site-inspection-surveying.jpg',
     ],
     attributes: { Weight: '50kg', Grade: 'CEM II 42.5R' },
     sortOrder: 8,

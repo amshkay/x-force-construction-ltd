@@ -453,7 +453,7 @@ export const MediaGalleryManagementPanel: React.FC = () => {
                           <img
                             src={
                               p.coverImageUrl ||
-                              'https://images.unsplash.com/photo-1541888946425-d0fbb186156f?auto=format&fit=crop&w=300&q=80'
+                              '/assets/services/interlocking-brick-construction.jpg'
                             }
                             alt={p.title}
                             className="h-11 w-14 rounded-lg object-cover bg-slate-100 shrink-0"
@@ -623,7 +623,7 @@ export const MediaGalleryManagementPanel: React.FC = () => {
                         src={
                           d.images && d.images.length > 0
                             ? d.images[0]
-                            : 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=600&q=80'
+                            : '/assets/services/pavement-laying.jpg'
                         }
                         alt={d.title}
                         className="h-full w-full object-cover"

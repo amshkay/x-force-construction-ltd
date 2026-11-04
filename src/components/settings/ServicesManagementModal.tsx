@@ -112,7 +112,7 @@ export const ServicesManagementModal: React.FC<ServicesManagementProps> = ({
         'Customer handover sign-off report',
       ],
       iconName: 'Wrench',
-      imageUrl: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80',
+      imageUrl: '/assets/services/interlocking-brick-construction.jpg',
       isAvailable: true,
     });
   };
