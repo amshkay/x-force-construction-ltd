@@ -106,9 +106,14 @@ export class AuditRepository {
     if (appConfig.supabase.isConfigured) {
       try {
         const supabase = getSupabaseClient();
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const safeUuid =
+          sanitizedEntry.actorUserId && uuidRegex.test(sanitizedEntry.actorUserId)
+            ? sanitizedEntry.actorUserId
+            : null;
         const insertData: Database['public']['Tables']['audit_logs']['Insert'] = {
-          user_id: sanitizedEntry.actorUserId || null,
-          actor_user_id: sanitizedEntry.actorUserId || null,
+          user_id: safeUuid,
+          actor_user_id: safeUuid,
           user_email: sanitizedEntry.actorUserEmail || null,
           actor_user_email: sanitizedEntry.actorUserEmail || null,
           actor_user_name: sanitizedEntry.actorUserName || null,
@@ -131,7 +136,14 @@ export class AuditRepository {
           timestamp: sanitizedEntry.timestamp,
           created_at: sanitizedEntry.timestamp,
         };
-        await supabase.from('audit_logs').insert(insertData);
+        const { error } = await supabase.from('audit_logs').insert(insertData);
+        if (error && error.code === '23503' && safeUuid !== null) {
+          await supabase.from('audit_logs').insert({
+            ...insertData,
+            user_id: null,
+            actor_user_id: null,
+          });
+        }
       } catch (err) {
         console.warn('[AuditRepository] Supabase persistence error:', err);
       }

@@ -87,3 +87,13 @@ export function isTableMissingError(error: any, tableName?: string): boolean {
 }
 
 export const supabase = getSupabaseClient();
+
+export function createSupabaseAuthHeaders(
+  accessToken: string,
+  includeJsonContentType = false
+): Record<string, string> {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    ...(includeJsonContentType ? { 'Content-Type': 'application/json' } : {}),
+  };
+}

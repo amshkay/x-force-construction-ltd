@@ -52,7 +52,7 @@ export const ReceiveStockModal: React.FC<ReceiveStockModalProps> = ({
     if (isOpen) {
       loadDependencies();
     }
-  }, [isOpen]);
+  }, [isOpen, initialItem]);
 
   const loadDependencies = async () => {
     try {
@@ -61,22 +61,30 @@ export const ReceiveStockModal: React.FC<ReceiveStockModalProps> = ({
         stockLocationRepository.getActiveLocations(),
       ]);
 
-      const prods = prodsRes || [];
+      const prods = (prodsRes || []).filter((p) => p.isActive);
       setProducts(prods);
       setLocations(locs);
 
       if (initialItem) {
+        const matchedProd = prods.find((p) => p.id === initialItem.productId);
+        const matchedVar = matchedProd?.variants?.find((v) => v.id === initialItem.variantId);
         setSelectedProductId(initialItem.productId);
         setSelectedVariantId(initialItem.variantId || '');
         setDestinationLocationId(initialItem.locationId);
-        setUnitCost(initialItem.unitCost || '');
+        setUnitCost(
+          initialItem.unitCost || matchedVar?.costPriceOverride || matchedProd?.costPrice || ''
+        );
       } else {
         if (prods.length > 0) {
-          setSelectedProductId(prods[0].id);
-          if (prods[0].variants && prods[0].variants.length > 0) {
-            setSelectedVariantId(prods[0].variants[0].id);
+          const firstProd = prods[0];
+          const activeVars = (firstProd.variants || []).filter((v) => v.isActive);
+          setSelectedProductId(firstProd.id);
+          if (activeVars.length > 0) {
+            setSelectedVariantId(activeVars[0].id);
+            setUnitCost(activeVars[0].costPriceOverride ?? firstProd.costPrice ?? '');
           } else {
             setSelectedVariantId('');
+            setUnitCost(firstProd.costPrice ?? '');
           }
         }
         if (locs.length > 0) {
@@ -94,14 +102,15 @@ export const ReceiveStockModal: React.FC<ReceiveStockModalProps> = ({
   };
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
-  const variants = selectedProduct?.variants || [];
+  const variants = (selectedProduct?.variants || []).filter((v) => v.isActive);
 
   const handleProductChange = (prodId: string) => {
     setSelectedProductId(prodId);
     const prod = products.find((p) => p.id === prodId);
-    if (prod?.variants && prod.variants.length > 0) {
-      setSelectedVariantId(prod.variants[0].id);
-      setUnitCost(prod.variants[0].costPriceOverride ?? prod.costPrice ?? '');
+    const activeVars = (prod?.variants || []).filter((v) => v.isActive);
+    if (activeVars.length > 0) {
+      setSelectedVariantId(activeVars[0].id);
+      setUnitCost(activeVars[0].costPriceOverride ?? prod?.costPrice ?? '');
     } else {
       setSelectedVariantId('');
       setUnitCost(prod?.costPrice ?? '');

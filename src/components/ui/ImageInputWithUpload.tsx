@@ -39,7 +39,7 @@ export const ImageInputWithUpload: React.FC<ImageInputWithUploadProps> = ({
   onRemove,
   bucket = 'project-media',
   folder = 'uploads',
-  placeholder = 'https://images.unsplash.com/... or paste image URL',
+  placeholder = 'Upload image from local storage or paste URL',
   required = false,
   disabled = false,
   previewHeight = 'h-32',

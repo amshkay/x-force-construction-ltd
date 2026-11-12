@@ -549,6 +549,470 @@ app.post('/api/settings', generalApiLimiter, async (req, res) => {
   }
 });
 
+// ============================================================================
+// Inventory & Stock Management API (Server-side Supabase Admin Bridge)
+// Handles valid UUIDs, functional unique index upserts, and RLS-resilient staff writes
+// ============================================================================
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type InventoryPermissionResolver = string | ((req: express.Request) => string[]);
+
+function requireInventoryPermission(requiredPermission: InventoryPermissionResolver) {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ success: false, error: 'Supabase admin client is not configured.' });
+    }
+
+    const token = /^Bearer\s+(.+)$/i.exec(req.get('authorization') || '')?.[1];
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'Authentication is required.' });
+    }
+
+    try {
+      const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+      if (authError || !authData.user) {
+        return res.status(401).json({ success: false, error: 'A valid session is required.' });
+      }
+
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('role_id, status')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+      if (profileError) {
+        console.error('[Inventory API] Failed to load staff profile:', profileError);
+        return res.status(500).json({ success: false, error: 'Could not verify staff permissions.' });
+      }
+      if (!profile || profile.status !== 'active') {
+        return res.status(403).json({ success: false, error: 'An active staff account is required.' });
+      }
+
+      const { data: role, error: roleError } = await supabaseAdmin
+        .from('roles')
+        .select('name')
+        .eq('id', profile.role_id)
+        .maybeSingle();
+      if (roleError) {
+        console.error('[Inventory API] Failed to load staff role:', roleError);
+        return res.status(500).json({ success: false, error: 'Could not verify staff permissions.' });
+      }
+      if (!role) {
+        return res.status(403).json({ success: false, error: 'A staff role is required.' });
+      }
+
+      if (role.name !== 'administrator') {
+        const { data: permissionRows, error: permissionError } = await supabaseAdmin
+          .from('role_permissions')
+          .select('permissions(code)')
+          .eq('role_id', profile.role_id);
+        if (permissionError) {
+          console.error('[Inventory API] Failed to load role permissions:', permissionError);
+          return res.status(500).json({ success: false, error: 'Could not verify staff permissions.' });
+        }
+
+        const grantedPermissions = new Set(
+          (permissionRows || []).flatMap((row: any) => {
+            const relation = row.permissions;
+            return Array.isArray(relation)
+              ? relation.map((permission: any) => permission.code)
+              : [relation?.code];
+          }).filter((permission: unknown): permission is string => typeof permission === 'string')
+        );
+        const required = typeof requiredPermission === 'function'
+          ? requiredPermission(req)
+          : [requiredPermission];
+
+        if (!required.some((permission) => grantedPermissions.has(permission))) {
+          return res.status(403).json({ success: false, error: 'You do not have permission to access inventory.' });
+        }
+      }
+
+      return next();
+    } catch (err) {
+      console.error('[Inventory API] Authorization failed:', err);
+      return res.status(500).json({ success: false, error: 'Could not verify staff permissions.' });
+    }
+  };
+}
+
+function getBalancePermissions(req: express.Request): string[] {
+  const body = req.body || {};
+  if (body.absoluteQuantityOnHand !== undefined && body.absoluteQuantityOnHand !== null) {
+    return ['inventory.adjust'];
+  }
+  const delta = Number(body.quantityOnHandDelta) || 0;
+  if (delta < 0) {
+    return ['inventory.issue', 'inventory.transfer', 'inventory.adjust'];
+  }
+  if (delta > 0) {
+    return ['inventory.receive', 'inventory.transfer', 'inventory.adjust'];
+  }
+  if (Number(body.deltaReserved) !== 0) {
+    return ['inventory.issue', 'inventory.adjust'];
+  }
+  return [];
+}
+
+function getMovementPermissions(req: express.Request): string[] {
+  const movementType = String(req.body?.movementType || 'adjustment').toLowerCase();
+  switch (movementType) {
+    case 'received':
+    case 'return':
+      return ['inventory.receive'];
+    case 'opening_balance':
+      return ['inventory.receive', 'inventory.adjust'];
+    case 'issued':
+    case 'pos_sale':
+      return ['inventory.issue'];
+    case 'transfer':
+      return ['inventory.transfer'];
+    default:
+      return ['inventory.adjust'];
+  }
+}
+
+app.get('/api/inventory/locations', generalApiLimiter, requireInventoryPermission('inventory.view'), async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ success: false, error: 'Supabase admin client is not configured.' });
+    }
+    const { data, error } = await supabaseAdmin
+      .from('stock_locations')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    return res.json({ success: true, data: data || [] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to load stock locations.' });
+  }
+});
+
+app.post('/api/inventory/locations', generalApiLimiter, requireInventoryPermission('inventory.manage_locations'), async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ success: false, error: 'Supabase admin client is not configured.' });
+    }
+    const { id, name, code, address, isActive, isDefault, isUpdate } = req.body || {};
+    if (!name || !code) {
+      return res.status(400).json({ success: false, error: 'Location name and code are required.' });
+    }
+
+    const safeId = id && UUID_REGEX.test(String(id)) ? String(id) : crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    if (isDefault) {
+      await supabaseAdmin
+        .from('stock_locations')
+        .update({ is_default: false, updated_at: now })
+        .neq('id', safeId);
+    }
+
+    if (isUpdate && id && UUID_REGEX.test(String(id))) {
+      const { data, error } = await supabaseAdmin
+        .from('stock_locations')
+        .update({
+          name: String(name).trim(),
+          code: String(code).trim().toUpperCase(),
+          address: address ? String(address).trim() : null,
+          is_active: isActive !== undefined ? Boolean(isActive) : true,
+          is_default: Boolean(isDefault),
+          updated_at: now,
+        })
+        .eq('id', safeId)
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(400).json({ success: false, error: error.message });
+      }
+      return res.json({ success: true, data });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('stock_locations')
+      .insert({
+        id: safeId,
+        name: String(name).trim(),
+        code: String(code).trim().toUpperCase(),
+        address: address ? String(address).trim() : null,
+        is_active: isActive !== undefined ? Boolean(isActive) : true,
+        is_default: Boolean(isDefault),
+        created_at: now,
+        updated_at: now,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
+    return res.json({ success: true, data });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to save stock location.' });
+  }
+});
+
+app.get('/api/inventory/balances', generalApiLimiter, requireInventoryPermission('inventory.view'), async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ success: false, error: 'Supabase admin client is not configured.' });
+    }
+    let query = supabaseAdmin.from('inventory_balances').select('*');
+    const locationId = req.query.locationId as string | undefined;
+    const productId = req.query.productId as string | undefined;
+
+    if (locationId && locationId !== 'all') {
+      query = query.eq('location_id', locationId);
+    }
+    if (productId) {
+      query = query.eq('product_id', productId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    return res.json({ success: true, data: data || [] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to fetch inventory balances.' });
+  }
+});
+
+app.get('/api/inventory/movements', generalApiLimiter, requireInventoryPermission('inventory.view'), async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ success: false, error: 'Supabase admin client is not configured.' });
+    }
+    let query = supabaseAdmin
+      .from('stock_movements')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    const locationId = req.query.locationId as string | undefined;
+    const productId = req.query.productId as string | undefined;
+    const variantId = req.query.variantId as string | undefined;
+    const movementType = req.query.movementType as string | undefined;
+
+    if (locationId && locationId !== 'all') {
+      query = query.or(`source_location_id.eq.${locationId},destination_location_id.eq.${locationId}`);
+    }
+    if (productId) query = query.eq('product_id', productId);
+    if (variantId) query = query.eq('variant_id', variantId);
+    if (movementType) query = query.eq('movement_type', movementType);
+
+    const { data, error } = await query;
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    return res.json({ success: true, data: data || [] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to fetch stock movements.' });
+  }
+});
+
+app.post('/api/inventory/balance', generalApiLimiter, requireInventoryPermission(getBalancePermissions), async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ success: false, error: 'Supabase admin client is not configured.' });
+    }
+
+    const {
+      id,
+      productId,
+      variantId,
+      locationId,
+      quantityOnHandDelta,
+      absoluteQuantityOnHand,
+      deltaReserved,
+    } = req.body || {};
+
+    if (!productId || !UUID_REGEX.test(String(productId))) {
+      return res.status(400).json({ success: false, error: 'Valid productId UUID is required.' });
+    }
+    if (!locationId || !UUID_REGEX.test(String(locationId))) {
+      return res.status(400).json({ success: false, error: 'Valid locationId UUID is required.' });
+    }
+    const cleanVariantId = variantId && UUID_REGEX.test(String(variantId)) ? String(variantId) : null;
+
+    // Look up existing row matching functional unique index (product_id, COALESCE(variant_id, nil), location_id)
+    let findQuery = supabaseAdmin
+      .from('inventory_balances')
+      .select('*')
+      .eq('product_id', productId)
+      .eq('location_id', locationId);
+
+    if (cleanVariantId) {
+      findQuery = findQuery.eq('variant_id', cleanVariantId);
+    } else {
+      findQuery = findQuery.is('variant_id', null);
+    }
+
+    const { data: existingRows, error: findErr } = await findQuery.limit(1);
+    if (findErr) {
+      return res.status(500).json({ success: false, error: findErr.message });
+    }
+
+    const existing = existingRows && existingRows.length > 0 ? existingRows[0] : null;
+    const now = new Date().toISOString();
+
+    if (existing) {
+      const curOnHand = Number(existing.quantity_on_hand) || 0;
+      const curReserved = Number(existing.quantity_reserved) || 0;
+
+      const nextOnHand =
+        absoluteQuantityOnHand !== undefined && absoluteQuantityOnHand !== null
+          ? Math.max(0, Number(absoluteQuantityOnHand))
+          : Math.max(0, curOnHand + (Number(quantityOnHandDelta) || 0));
+
+      const nextReserved =
+        deltaReserved !== undefined && deltaReserved !== null
+          ? Math.max(0, curReserved + Number(deltaReserved))
+          : curReserved;
+
+      const { data: updatedRow, error: updErr } = await supabaseAdmin
+        .from('inventory_balances')
+        .update({
+          quantity_on_hand: nextOnHand,
+          quantity_reserved: nextReserved,
+          updated_at: now,
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (updErr) {
+        return res.status(400).json({ success: false, error: updErr.message });
+      }
+      return res.json({ success: true, data: updatedRow });
+    }
+
+    // Insert new balance row with valid UUID
+    const initialOnHand =
+      absoluteQuantityOnHand !== undefined && absoluteQuantityOnHand !== null
+        ? Math.max(0, Number(absoluteQuantityOnHand))
+        : Math.max(0, Number(quantityOnHandDelta) || 0);
+
+    const initialReserved =
+      deltaReserved !== undefined && deltaReserved !== null
+        ? Math.max(0, Number(deltaReserved))
+        : 0;
+
+    const newId = id && UUID_REGEX.test(String(id)) ? String(id) : crypto.randomUUID();
+    const { data: insertedRow, error: insErr } = await supabaseAdmin
+      .from('inventory_balances')
+      .insert({
+        id: newId,
+        product_id: productId,
+        variant_id: cleanVariantId,
+        location_id: locationId,
+        quantity_on_hand: initialOnHand,
+        quantity_reserved: initialReserved,
+        updated_at: now,
+      })
+      .select()
+      .single();
+
+    if (insErr) {
+      return res.status(400).json({ success: false, error: insErr.message });
+    }
+    return res.json({ success: true, data: insertedRow });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to update inventory balance.' });
+  }
+});
+
+app.post('/api/inventory/movement', generalApiLimiter, requireInventoryPermission(getMovementPermissions), async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ success: false, error: 'Supabase admin client is not configured.' });
+    }
+
+    const m = req.body || {};
+    if (!m.productId || !UUID_REGEX.test(String(m.productId))) {
+      return res.status(400).json({ success: false, error: 'Valid productId UUID is required.' });
+    }
+    const qty = Number(m.quantity);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      return res.status(400).json({ success: false, error: 'Movement quantity must be greater than zero.' });
+    }
+
+    const allowedMovementTypes = new Set([
+      'opening_balance',
+      'received',
+      'issued',
+      'transfer',
+      'adjustment',
+      'wastage',
+      'return',
+      'damaged',
+    ]);
+    let dbMovementType = String(m.movementType || 'adjustment');
+    if (!allowedMovementTypes.has(dbMovementType)) {
+      if (dbMovementType === 'stock_count_reconciliation') dbMovementType = 'adjustment';
+      else if (dbMovementType === 'pos_sale') dbMovementType = 'issued';
+      else dbMovementType = 'adjustment';
+    }
+
+    const safeId = m.id && UUID_REGEX.test(String(m.id)) ? String(m.id) : crypto.randomUUID();
+    const safeVariantId = m.variantId && UUID_REGEX.test(String(m.variantId)) ? String(m.variantId) : null;
+    const safeSourceLoc =
+      m.sourceLocationId && UUID_REGEX.test(String(m.sourceLocationId)) ? String(m.sourceLocationId) : null;
+    const safeDestLoc =
+      m.destinationLocationId && UUID_REGEX.test(String(m.destinationLocationId))
+        ? String(m.destinationLocationId)
+        : null;
+    let safeCreatedBy: string | null =
+      m.performedBy && UUID_REGEX.test(String(m.performedBy)) ? String(m.performedBy) : null;
+
+    let movementNumber = String(m.movementNumber || `SM-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`);
+
+    const buildRow = () => ({
+      id: safeId,
+      movement_number: movementNumber,
+      movement_type: dbMovementType,
+      product_id: m.productId,
+      variant_id: safeVariantId,
+      source_location_id: safeSourceLoc,
+      destination_location_id: safeDestLoc,
+      quantity: qty,
+      unit_cost: m.unitCost !== undefined && m.unitCost !== null ? Number(m.unitCost) : null,
+      reference_type: m.referenceType || null,
+      reference_id: m.referenceId || null,
+      notes: m.notes || m.reason || null,
+      created_by: safeCreatedBy,
+      created_at: m.createdAt || new Date().toISOString(),
+    });
+
+    let { data, error } = await supabaseAdmin.from('stock_movements').insert(buildRow()).select().single();
+
+    // Retry on foreign key violation for created_by (e.g. non-auth.users UUID)
+    if (error && error.code === '23503' && safeCreatedBy !== null) {
+      safeCreatedBy = null;
+      const retry = await supabaseAdmin.from('stock_movements').insert(buildRow()).select().single();
+      data = retry.data;
+      error = retry.error;
+    }
+
+    // Retry on movement_number uniqueness collision
+    if (error && error.code === '23505') {
+      movementNumber = `${movementNumber}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const retry = await supabaseAdmin.from('stock_movements').insert(buildRow()).select().single();
+      data = retry.data;
+      error = retry.error;
+    }
+
+    if (error) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
+
+    return res.json({ success: true, data });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to record stock movement.' });
+  }
+});
+
 // Vite middleware in dev or static in prod
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {

@@ -380,7 +380,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           onRemove={() => setCoverImageUrl('')}
           bucket="project-media"
           folder="projects"
-          placeholder="https://images.unsplash.com/... or paste image URL"
+          placeholder="Upload project photo or paste image URL"
           previewHeight="h-36"
         />
 

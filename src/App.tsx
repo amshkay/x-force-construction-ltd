@@ -466,7 +466,10 @@ function MainApplication() {
       >
         {/* Public Routes Rendering */}
         {publicRoute === '/' && (
-          <PublicHomePage onNavigate={handlePublicNavigation} />
+          <PublicHomePage
+            onNavigate={handlePublicNavigation}
+            onRequestQuote={() => handlePublicNavigation('/request')}
+          />
         )}
         {publicRoute === '/products' && (
           <PublicProductsPage

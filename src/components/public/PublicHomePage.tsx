@@ -8,39 +8,164 @@ import { ServiceCard } from '../cards/ServiceCard';
 import { publicDataService, DEFAULT_PUBLIC_SERVICES } from '../../services/publicData.service';
 import { businessSettingsService } from '../../services/settings.service';
 import { getPublicProjection } from '../../config/business.config';
+import { ProductDetailModal } from './ProductDetailModal';
 import { PublicProduct, PublicProject, PublicServiceItem } from '../../types/public';
 
 export interface PublicHomePageProps {
   onNavigate: (route: string) => void;
+  onRequestQuote?: (product?: PublicProduct) => void;
 }
 
-const FALLBACK_PRODUCTS = [
+const FALLBACK_PRODUCTS: PublicProduct[] = [
   {
     id: 'b1000000-0000-0000-0000-000000000003',
-    name: '220mm Hydraform Interlocking Earth Block',
+    categoryId: 'c1000000-0000-0000-0000-000000000001',
     categoryName: 'Interlocking Bricks & Blocks',
-    variant: '220mm x 220mm x 115mm (Precision Tongue & Groove)',
-    sellingPrice: 320,
+    name: '220mm Hydraform Interlocking Earth Block',
+    slug: '220mm-hydraform-interlocking-earth-block',
+    sku: 'BLK-220-HYD-001',
+    shortDescription: 'Precision mortarless dry-stack masonry block delivering 40% faster wall erection velocity.',
+    description: 'Eco-engineered hydraulic compressed stabilized soil-cement block with integrated tongue-and-groove profile eliminating mortar beds between courses.',
     unit: 'piece',
-    imageUrl: '/assets/services/interlocking-brick-construction.jpg',
+    sellingPrice: 320,
+    priceOnRequest: false,
+    requiresInstallation: true,
+    imageUrl: '/assets/products/hydraform-ochre.jpg',
+    images: [
+      '/assets/products/hydraform-ochre.jpg',
+      '/assets/products/hydraform-terracotta.jpg',
+    ],
+    variants: [
+      {
+        id: 'ba000000-0000-0000-0000-000000000004',
+        productId: 'b1000000-0000-0000-0000-000000000003',
+        name: 'Natural Clay Ochre',
+        sku: 'BLK-220-OCH-01',
+        color: 'Natural Ochre',
+        size: '220 x 220 x 115mm',
+        finish: 'Smooth Hydraulic Compressed Earth',
+        imageUrl: '/assets/products/hydraform-ochre.jpg',
+        priceOverride: 320,
+      },
+      {
+        id: 'ba000000-0000-0000-0000-000000000005',
+        productId: 'b1000000-0000-0000-0000-000000000003',
+        name: 'Earthy Terracotta Red',
+        sku: 'BLK-220-TER-02',
+        color: 'Terracotta',
+        size: '220 x 220 x 115mm',
+        finish: 'Warm Iron-Rich Laterite',
+        imageUrl: '/assets/products/hydraform-terracotta.jpg',
+        priceOverride: 335,
+      },
+    ],
+    isFeatured: true,
+    isAvailable: true,
   },
   {
     id: 'b1000000-0000-0000-0000-000000000001',
-    name: '80mm Heavy-Duty Interlocking Paver (45 MPa)',
+    categoryId: 'c1000000-0000-0000-0000-000000000002',
     categoryName: 'Paving Stones & Walkway Pavers',
-    variant: '80mm High-Load Hydraulic Vibratory Pressed',
-    sellingPrice: 185,
+    name: '80mm Heavy-Duty Interlocking Paver (45 MPa)',
+    slug: '80mm-heavy-duty-interlocking-paver',
+    sku: 'PAV-80-HD-001',
+    shortDescription: 'Solid high-density interlocking concrete paving block manufactured on automated hydraulic vibratory presses with 45 MPa rating.',
+    description: 'Engineered for ports, container staging yards, truck depots, and commercial arterial driveways.',
     unit: 'piece',
-    imageUrl: '/assets/services/pavement-laying.jpg',
+    sellingPrice: 185,
+    priceOnRequest: false,
+    requiresInstallation: true,
+    imageUrl: '/assets/products/paver-80mm-charcoal.jpg',
+    images: [
+      '/assets/products/paver-80mm-charcoal.jpg',
+      '/assets/products/paver-80mm-terracotta.jpg',
+      '/assets/products/paver-80mm-granite-grey.jpg',
+    ],
+    variants: [
+      {
+        id: 'ba000000-0000-0000-0000-000000000001',
+        productId: 'b1000000-0000-0000-0000-000000000001',
+        name: 'Industrial Terracotta Red',
+        sku: 'PAV-80-TERRA-01',
+        color: 'Terracotta Red',
+        size: '80mm Heavy-Duty',
+        finish: 'Hydraulic Vibratory Pressed',
+        imageUrl: '/assets/products/paver-80mm-terracotta.jpg',
+        priceOverride: 185,
+      },
+      {
+        id: 'ba000000-0000-0000-0000-000000000002',
+        productId: 'b1000000-0000-0000-0000-000000000001',
+        name: 'Charcoal Black High-Torque',
+        sku: 'PAV-80-CHAR-02',
+        color: 'Charcoal Black',
+        size: '80mm Heavy-Duty',
+        finish: 'Carbon-Infused Industrial Finish',
+        imageUrl: '/assets/products/paver-80mm-charcoal.jpg',
+        priceOverride: 195,
+      },
+      {
+        id: 'ba000000-0000-0000-0000-000000000003',
+        productId: 'b1000000-0000-0000-0000-000000000001',
+        name: 'Natural Granite Grey',
+        sku: 'PAV-80-GREY-03',
+        color: 'Granite Grey',
+        size: '80mm Heavy-Duty',
+        finish: 'Unpigmented Pure Granite Aggregate',
+        imageUrl: '/assets/products/paver-80mm-granite-grey.jpg',
+        priceOverride: 185,
+      },
+    ],
+    isFeatured: true,
+    isAvailable: true,
+  },
+  {
+    id: 'b1000000-0000-0000-0000-000000000005',
+    categoryId: 'c1000000-0000-0000-0000-000000000004',
+    categoryName: 'Coping & Structural Concrete',
+    name: 'Cast Concrete Barrier Kerb (125x250x500mm)',
+    slug: 'cast-concrete-barrier-kerb',
+    sku: 'CPG-KRB-BAR-001',
+    shortDescription: 'Solid road boundary and paver containment restraint manufactured with high-strength granite aggregate.',
+    description: 'Precast concrete barrier curb with chamfered profile for parking lots, road edging, and containment of paver fields against lateral movement.',
+    unit: 'piece',
+    sellingPrice: 2200,
+    priceOnRequest: false,
+    requiresInstallation: true,
+    imageUrl: '/assets/products/kerb-1.jpg',
+    images: [
+      '/assets/products/kerb-1.jpg',
+      '/assets/products/kerb-2.jpg',
+      '/assets/products/kerb-3.jpg',
+      '/assets/products/kerb-4.jpg',
+      '/assets/products/kerb-5.jpg',
+    ],
+    variants: [],
+    isFeatured: true,
+    isAvailable: true,
   },
   {
     id: 'b1000000-0000-0000-0000-000000000006',
-    name: 'Precast Saddleback Wall Coping (300mm)',
+    categoryId: 'c1000000-0000-0000-0000-000000000004',
     categoryName: 'Coping & Structural Concrete',
-    variant: 'Water-shedding dual drip throat profile',
-    sellingPrice: 1850,
+    name: 'Precast Saddleback Wall Coping (300mm)',
+    slug: 'precast-saddleback-wall-coping',
+    sku: 'CPG-SDL-300-002',
+    shortDescription: 'Dual-sloped architectural coping with integrated continuous drip throats.',
+    description: 'Weatherproof precast concrete coping capping for 9-inch walling and perimeter fencing.',
     unit: 'piece',
-    imageUrl: '/assets/services/interlocking-brick-construction.jpg',
+    sellingPrice: 1850,
+    priceOnRequest: false,
+    requiresInstallation: true,
+    imageUrl: '/assets/products/coping-1.jpg',
+    images: [
+      '/assets/products/coping-1.jpg',
+      '/assets/products/coping-2.jpg',
+      '/assets/products/coping-3.jpg',
+    ],
+    variants: [],
+    isFeatured: true,
+    isAvailable: true,
   },
 ];
 
@@ -51,7 +176,7 @@ const FALLBACK_PROJECTS = [
     location: 'Ibeju-Lekki Free Trade Zone, Lagos',
     category: 'Industrial Yard',
     completionDate: 'November 2025',
-    coverImageUrl: '/assets/services/pavement-laying.jpg',
+    coverImageUrl: '/assets/projects/atlantic-logistics.jpg',
   },
   {
     id: 'e7000000-0000-0000-0000-000000000002',
@@ -59,7 +184,7 @@ const FALLBACK_PROJECTS = [
     location: 'Banana Island, Ikoyi, Lagos',
     category: 'Residential Building',
     completionDate: 'January 2026',
-    coverImageUrl: '/assets/services/interlocking-brick-construction.jpg',
+    coverImageUrl: '/assets/projects/palms-villa.jpg',
   },
   {
     id: 'e7000000-0000-0000-0000-000000000003',
@@ -67,17 +192,18 @@ const FALLBACK_PROJECTS = [
     location: 'Epe Resort Expressway, Lagos',
     category: 'Perimeter Wall',
     completionDate: 'December 2025',
-    coverImageUrl: '/assets/services/site-inspection-surveying.jpg',
+    coverImageUrl: '/assets/projects/epe-waterfront.jpg',
   },
 ];
 
-export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) => {
+export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate, onRequestQuote }) => {
   const { publicSettings } = useBusinessSettings();
   const [liveSettings, setLiveSettings] = useState(publicSettings);
   const [featuredProducts, setFeaturedProducts] = useState<PublicProduct[]>([]);
   const [featuredProjects, setFeaturedProjects] = useState<PublicProject[]>([]);
   const [services, setServices] = useState<PublicServiceItem[]>([]);
   const [heroImageError, setHeroImageError] = useState(false);
+  const [activeModalProduct, setActiveModalProduct] = useState<PublicProduct | null>(null);
 
   // Synchronize liveSettings whenever publicSettings changes
   useEffect(() => {
@@ -406,7 +532,13 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
                 status="active"
                 statusLabel="In Stock"
                 imageUrl={img}
-                onAction={() => onNavigate('/products')}
+                onAction={() => {
+                  const match =
+                    featuredProducts.find((p) => p.id === prod.id) ||
+                    FALLBACK_PRODUCTS.find((p) => p.id === prod.id) ||
+                    (prod as unknown as PublicProduct);
+                  setActiveModalProduct(match);
+                }}
                 actionLabel="View Specs"
               />
             );
@@ -415,7 +547,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
       </section>
 
       {/* 3. Professional Installation Services Section (Section 20) */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-left">
+      <section id="homepage-services-section" className="relative z-0 block w-full clear-both mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-left">
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
             End-to-End Solutions
@@ -443,7 +575,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
       </section>
 
       {/* 4. Project Showcase Section (Section 20) */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-left">
+      <section id="homepage-projects-section" className="relative z-0 block w-full clear-both mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-left">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
@@ -527,6 +659,21 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({ onNavigate }) =>
           </div>
         </div>
       </section>
+
+      {/* Interactive Material Specification & Variant Swatch Modal */}
+      <ProductDetailModal
+        product={activeModalProduct}
+        isOpen={Boolean(activeModalProduct)}
+        onClose={() => setActiveModalProduct(null)}
+        onRequestQuote={(p) => {
+          setActiveModalProduct(null);
+          if (onRequestQuote) {
+            onRequestQuote(p);
+          } else {
+            onNavigate('/request');
+          }
+        }}
+      />
     </div>
   );
 };

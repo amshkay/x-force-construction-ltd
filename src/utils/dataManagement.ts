@@ -22,6 +22,7 @@ export const ADMIN_DATA_STORAGE_KEYS = [
   'xforce_service_providers_v1',
   'xforce_gallery_designs_v7',
   'xforce_gallery_projects_v7',
+  'xforce_gallery_projects_v8',
   'xforce_gallery_media_v7',
   'xforce_conversations_v1',
   'xforce_internal_messages_v1',

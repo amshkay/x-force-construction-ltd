@@ -7,13 +7,50 @@
  * Multi-tier persistence: Supabase remote table with resilient local storage fallback.
  */
 
-import { getSupabaseClient } from '../lib/supabase/client';
+import {
+  createSupabaseAuthHeaders,
+  getSupabaseClient,
+  isNetworkOrFetchError,
+  isTableMissingError,
+} from '../lib/supabase/client';
 import { appConfig } from '../config/app.config';
 import { localStore } from '../lib/storage/localStorage';
 import { StockLocation, StockLocationFormData } from '../types/inventory';
 import { DbStockLocation } from '../types/database';
 
 const STOCK_LOCATIONS_STORAGE_KEY = 'xforce_stock_locations_v1';
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUuid(value?: string | null): value is string {
+  return Boolean(value && UUID_REGEX.test(value));
+}
+
+function generateUuid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+function isPermissionOrAuthError(error: any): boolean {
+  if (!error) return false;
+  const code = String(error.code || '');
+  const msg = String(error.message || '').toLowerCase();
+  return (
+    code === '42501' ||
+    code === 'PGRST301' ||
+    error.status === 401 ||
+    error.status === 403 ||
+    msg.includes('row-level security') ||
+    msg.includes('permission denied') ||
+    msg.includes('jwt') ||
+    msg.includes('not authenticated')
+  );
+}
 
 export const INITIAL_FOUNDATIONAL_LOCATIONS: StockLocation[] = [
   {
@@ -63,10 +100,19 @@ export class StockLocationRepository {
   private initCache(): void {
     const stored = localStore.get<StockLocation[] | null>(STOCK_LOCATIONS_STORAGE_KEY, null);
     if (!stored || stored.length === 0) {
-      this.memoryLocations = INITIAL_FOUNDATIONAL_LOCATIONS;
-      localStore.set(STOCK_LOCATIONS_STORAGE_KEY, INITIAL_FOUNDATIONAL_LOCATIONS);
+      this.memoryLocations = appConfig.supabase.isConfigured ? [] : INITIAL_FOUNDATIONAL_LOCATIONS;
+      if (!appConfig.supabase.isConfigured) {
+        localStore.set(STOCK_LOCATIONS_STORAGE_KEY, INITIAL_FOUNDATIONAL_LOCATIONS);
+      }
     } else {
-      this.memoryLocations = stored;
+      // Strip legacy placeholder non-UUID locations when Supabase is configured
+      const validStored = appConfig.supabase.isConfigured
+        ? stored.filter((l) => isValidUuid(l.id))
+        : stored;
+      this.memoryLocations = validStored;
+      if (validStored.length !== stored.length) {
+        localStore.set(STOCK_LOCATIONS_STORAGE_KEY, validStored);
+      }
     }
   }
 
@@ -80,7 +126,7 @@ export class StockLocationRepository {
       id: row.id,
       name: row.name,
       code: row.code,
-      description: null, // DbStockLocation doesn't have description column, fallback to null
+      description: null,
       address: row.address,
       isActive: row.is_active,
       isDefault: row.is_default,
@@ -93,21 +139,41 @@ export class StockLocationRepository {
     if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
       try {
         const client = getSupabaseClient();
-        const { data, error } = await client
-          .from('stock_locations')
-          .select('*')
-          .order('name', { ascending: true });
+        const { data: sessionData } = await client.auth.getSession();
+        let remoteRows: any[] | null = null;
 
-        if (error) {
-          if (error.code === 'PGRST205' || error.code === '42P01') {
+        if (sessionData?.session) {
+          const { data, error } = await client
+            .from('stock_locations')
+            .select('*')
+            .order('name', { ascending: true });
+
+          if (!error && data) {
+            remoteRows = data;
+          } else if (error && isTableMissingError(error, 'stock_locations')) {
             if (!this.warnedAboutMissingTable) {
               console.info('[StockLocationRepository] Supabase stock_locations table not available, using offline cache.');
               this.warnedAboutMissingTable = true;
             }
             this.isRemoteTableAvailable = false;
           }
-        } else if (data && data.length > 0) {
-          const mapped = data.map((r: any) => this.mapDbRowToLocation(r));
+        }
+
+        // Fallback to server-side admin endpoint for Sandbox Personas or unauthenticated staff previews
+        if (sessionData?.session && remoteRows === null && typeof fetch !== 'undefined') {
+          const res = await fetch('/api/inventory/locations', {
+            headers: createSupabaseAuthHeaders(sessionData.session.access_token),
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.success && Array.isArray(json.data)) {
+              remoteRows = json.data;
+            }
+          }
+        }
+
+        if (remoteRows !== null) {
+          const mapped = remoteRows.map((r: any) => this.mapDbRowToLocation(r));
           this.saveToLocalStorage(mapped);
           return mapped;
         }
@@ -116,7 +182,10 @@ export class StockLocationRepository {
       }
     }
 
-    return this.memoryLocations || INITIAL_FOUNDATIONAL_LOCATIONS;
+    if (this.memoryLocations && this.memoryLocations.length > 0) {
+      return this.memoryLocations;
+    }
+    return appConfig.supabase.isConfigured ? [] : INITIAL_FOUNDATIONAL_LOCATIONS;
   }
 
   public async getActiveLocations(): Promise<StockLocation[]> {
@@ -140,8 +209,8 @@ export class StockLocationRepository {
       throw new Error(`A stock location with code '${data.code.trim().toUpperCase()}' already exists.`);
     }
 
-    const newLocation: StockLocation = {
-      id: `loc-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+    let newLocation: StockLocation = {
+      id: generateUuid(),
       name: data.name.trim(),
       code: data.code.trim().toUpperCase(),
       description: data.description?.trim() || null,
@@ -152,30 +221,91 @@ export class StockLocationRepository {
       updatedAt: new Date().toISOString(),
     };
 
-    if (newLocation.isDefault) {
-      existing.forEach((l) => (l.isDefault = false));
-    }
-
-    const updatedList = [newLocation, ...existing];
-    this.saveToLocalStorage(updatedList);
-
     if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
       try {
         const client = getSupabaseClient();
-        await client.from('stock_locations').insert({
-          id: newLocation.id,
-          name: newLocation.name,
-          code: newLocation.code,
-          address: newLocation.address,
-          is_active: newLocation.isActive,
-          is_default: newLocation.isDefault,
-          created_at: newLocation.createdAt,
-          updated_at: newLocation.updatedAt,
-        } as any);
-      } catch (err) {
-        console.warn('[StockLocationRepository] Remote insert failed:', err);
+        const { data: sessionData } = await client.auth.getSession();
+        let savedRemotely = false;
+        let needsServerFallback = false;
+
+        if (sessionData?.session) {
+          if (newLocation.isDefault) {
+            await client
+              .from('stock_locations')
+              .update({ is_default: false, updated_at: newLocation.updatedAt } as any)
+              .neq('id', newLocation.id);
+          }
+
+          const { data: insertedRow, error } = await client
+            .from('stock_locations')
+            .insert({
+              id: newLocation.id,
+              name: newLocation.name,
+              code: newLocation.code,
+              address: newLocation.address,
+              is_active: newLocation.isActive,
+              is_default: newLocation.isDefault,
+              created_at: newLocation.createdAt,
+              updated_at: newLocation.updatedAt,
+            } as any)
+            .select()
+            .single();
+
+          if (!error && insertedRow) {
+            newLocation = {
+              ...this.mapDbRowToLocation(insertedRow),
+              description: newLocation.description,
+            };
+            savedRemotely = true;
+          } else if (error && isTableMissingError(error, 'stock_locations')) {
+            this.isRemoteTableAvailable = false;
+          } else if (error && isPermissionOrAuthError(error)) {
+            needsServerFallback = true;
+          } else if (error) {
+            throw new Error(error.message || 'Failed to create stock location in database.');
+          }
+        }
+
+        if (!savedRemotely && needsServerFallback && sessionData?.session && typeof fetch !== 'undefined') {
+          const res = await fetch('/api/inventory/locations', {
+            method: 'POST',
+            headers: createSupabaseAuthHeaders(sessionData.session.access_token, true),
+            body: JSON.stringify({
+              id: newLocation.id,
+              name: newLocation.name,
+              code: newLocation.code,
+              address: newLocation.address,
+              isActive: newLocation.isActive,
+              isDefault: newLocation.isDefault,
+              isUpdate: false,
+            }),
+          });
+          const json = await res.json().catch(() => null);
+          if (!res.ok || !json?.success) {
+            throw new Error(json?.error || `Server error creating location (HTTP ${res.status}).`);
+          }
+          if (json.data) {
+            newLocation = {
+              ...this.mapDbRowToLocation(json.data),
+              description: newLocation.description,
+            };
+          }
+        }
+      } catch (err: any) {
+        const offline =
+          (typeof navigator !== 'undefined' && !navigator.onLine) || isNetworkOrFetchError(err);
+        if (!offline && this.isRemoteTableAvailable) {
+          throw err;
+        }
+        console.warn('[StockLocationRepository] Offline/unreachable remote insert, cached locally:', err);
       }
     }
+
+    if (newLocation.isDefault) {
+      existing.forEach((l) => (l.isDefault = false));
+    }
+    const updatedList = [newLocation, ...existing];
+    this.saveToLocalStorage(updatedList);
 
     return newLocation;
   }
@@ -196,12 +326,8 @@ export class StockLocationRepository {
       }
     }
 
-    if (data.isDefault) {
-      existing.forEach((l) => (l.isDefault = false));
-    }
-
     const current = existing[index];
-    const updated: StockLocation = {
+    let updated: StockLocation = {
       ...current,
       name: data.name !== undefined ? data.name.trim() : current.name,
       code: data.code !== undefined ? data.code.trim().toUpperCase() : current.code,
@@ -212,27 +338,90 @@ export class StockLocationRepository {
       updatedAt: new Date().toISOString(),
     };
 
-    existing[index] = updated;
-    this.saveToLocalStorage(existing);
-
     if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
       try {
         const client = getSupabaseClient();
-        await client
-          .from('stock_locations')
-          .update({
-            name: updated.name,
-            code: updated.code,
-            address: updated.address,
-            is_active: updated.isActive,
-            is_default: updated.isDefault,
-            updated_at: updated.updatedAt,
-          } as any)
-          .eq('id', id);
-      } catch (err) {
-        console.warn('[StockLocationRepository] Remote update failed:', err);
+        const { data: sessionData } = await client.auth.getSession();
+        let savedRemotely = false;
+        let needsServerFallback = false;
+
+        if (sessionData?.session) {
+          if (data.isDefault) {
+            await client
+              .from('stock_locations')
+              .update({ is_default: false, updated_at: updated.updatedAt } as any)
+              .neq('id', id);
+          }
+
+          const { data: updatedRow, error } = await client
+            .from('stock_locations')
+            .update({
+              name: updated.name,
+              code: updated.code,
+              address: updated.address,
+              is_active: updated.isActive,
+              is_default: updated.isDefault,
+              updated_at: updated.updatedAt,
+            } as any)
+            .eq('id', id)
+            .select()
+            .single();
+
+          if (!error && updatedRow) {
+            updated = {
+              ...this.mapDbRowToLocation(updatedRow),
+              description: updated.description,
+            };
+            savedRemotely = true;
+          } else if (error && isTableMissingError(error, 'stock_locations')) {
+            this.isRemoteTableAvailable = false;
+          } else if (error && isPermissionOrAuthError(error)) {
+            needsServerFallback = true;
+          } else if (error) {
+            throw new Error(error.message || 'Failed to update stock location in database.');
+          }
+        }
+
+        if (!savedRemotely && needsServerFallback && sessionData?.session && typeof fetch !== 'undefined') {
+          const res = await fetch('/api/inventory/locations', {
+            method: 'POST',
+            headers: createSupabaseAuthHeaders(sessionData.session.access_token, true),
+            body: JSON.stringify({
+              id: updated.id,
+              name: updated.name,
+              code: updated.code,
+              address: updated.address,
+              isActive: updated.isActive,
+              isDefault: updated.isDefault,
+              isUpdate: true,
+            }),
+          });
+          const json = await res.json().catch(() => null);
+          if (!res.ok || !json?.success) {
+            throw new Error(json?.error || `Server error updating location (HTTP ${res.status}).`);
+          }
+          if (json.data) {
+            updated = {
+              ...this.mapDbRowToLocation(json.data),
+              description: updated.description,
+            };
+          }
+        }
+      } catch (err: any) {
+        const offline =
+          (typeof navigator !== 'undefined' && !navigator.onLine) || isNetworkOrFetchError(err);
+        if (!offline && this.isRemoteTableAvailable) {
+          throw err;
+        }
+        console.warn('[StockLocationRepository] Offline/unreachable remote update, cached locally:', err);
       }
     }
+
+    if (data.isDefault) {
+      existing.forEach((l) => (l.isDefault = false));
+    }
+    existing[index] = updated;
+    this.saveToLocalStorage(existing);
 
     return updated;
   }

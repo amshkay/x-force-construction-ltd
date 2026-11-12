@@ -218,10 +218,29 @@ export class PublicDataService {
             attributes: v.attributes,
           }));
 
-        const primaryImage =
+        let primaryImage =
           (p.images && p.images.length > 0 ? p.images[0] : null) ||
           activeVariants.find((v) => v.imageUrl)?.imageUrl ||
           null;
+
+        if (!primaryImage || primaryImage.includes('unsplash.com') || primaryImage.includes('/assets/services/')) {
+          const nm = p.name.toLowerCase();
+          if (nm.includes('kerb') || nm.includes('barrier')) {
+            primaryImage = '/assets/products/kerb-1.jpg';
+          } else if (nm.includes('coping') || nm.includes('saddleback')) {
+            primaryImage = '/assets/products/coping-1.jpg';
+          } else if (nm.includes('conduit') || nm.includes('cored')) {
+            primaryImage = '/assets/products/conduit-1.jpg';
+          } else if (nm.includes('60mm')) {
+            primaryImage = '/assets/products/paver-60mm-1.jpg';
+          } else if (nm.includes('80mm') || nm.includes('heavy-duty')) {
+            primaryImage = '/assets/products/paver-80mm-charcoal.jpg';
+          } else if (nm.includes('hydraform') || nm.includes('brick')) {
+            primaryImage = '/assets/products/hydraform-ochre.jpg';
+          } else {
+            primaryImage = '/assets/products/paver-80mm-granite-grey.jpg';
+          }
+        }
 
         return {
           id: p.id,
@@ -378,7 +397,7 @@ export class PublicDataService {
    * Synchronously reads from local store or cache, or async from repository
    */
   getProjects(): PublicProject[] {
-    const cached = localStore.get<any[]>('xforce_gallery_projects_v7', []);
+    const cached = localStore.get<any[]>('xforce_gallery_projects_v8', []);
     if (cached && cached.length > 0) {
       return cached
         .filter((p) => p.isPublished !== false)
@@ -405,7 +424,7 @@ export class PublicDataService {
         }));
     }
 
-    localStore.set('xforce_gallery_projects_v7', INITIAL_PROJECTS);
+    localStore.set('xforce_gallery_projects_v8', INITIAL_PROJECTS);
     return DEFAULT_PUBLIC_PROJECTS;
   }
 

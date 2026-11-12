@@ -108,6 +108,7 @@ export const InventoryManagementPanel: React.FC<InventoryManagementPanelProps> =
   const [isDetailOpen, setIsDetailOpen] = useState<boolean>(false);
   const [selectedItemForAction, setSelectedItemForAction] = useState<InventoryItem | null>(null);
   const [isImportOpen, setIsImportOpen] = useState<boolean>(false);
+  const [feedbackBanner, setFeedbackBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -129,11 +130,20 @@ export const InventoryManagementPanel: React.FC<InventoryManagementPanelProps> =
       setMovements(movementsData);
       setLocations(locsData);
       setCategories(catsRes || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load inventory data:', err);
+      setFeedbackBanner({
+        type: 'error',
+        message: err?.message || 'Failed to load inventory data. Please try refreshing.',
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleActionSuccess = async (message: string) => {
+    setFeedbackBanner({ type: 'success', message });
+    await loadData();
   };
 
   // Filtered Stock Items
@@ -216,18 +226,20 @@ export const InventoryManagementPanel: React.FC<InventoryManagementPanelProps> =
   const handleToggleLocationActive = async (locId: string) => {
     try {
       await stockLocationRepository.toggleActive(locId);
-      await loadData();
-    } catch (err) {
+      await handleActionSuccess('Stock location status updated.');
+    } catch (err: any) {
       console.error('Failed to toggle location:', err);
+      setFeedbackBanner({ type: 'error', message: err?.message || 'Failed to update stock location.' });
     }
   };
 
   const handleSetDefaultLocation = async (locId: string) => {
     try {
       await stockLocationRepository.setDefault(locId);
-      await loadData();
-    } catch (err) {
+      await handleActionSuccess('Default stock location updated.');
+    } catch (err: any) {
       console.error('Failed to set default location:', err);
+      setFeedbackBanner({ type: 'error', message: err?.message || 'Failed to set default location.' });
     }
   };
 
@@ -283,6 +295,33 @@ export const InventoryManagementPanel: React.FC<InventoryManagementPanelProps> =
           </div>
         }
       />
+
+      {/* Feedback Banner */}
+      {feedbackBanner && (
+        <div
+          className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs ${
+            feedbackBanner.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300'
+              : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedbackBanner.type === 'success' ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+            )}
+            <span className="font-medium">{feedbackBanner.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedbackBanner(null)}
+            className="text-[11px] font-semibold opacity-75 hover:opacity-100"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* KPI Cards */}
       {stats && (
@@ -1038,42 +1077,42 @@ export const InventoryManagementPanel: React.FC<InventoryManagementPanelProps> =
       <ReceiveStockModal
         isOpen={isReceiveOpen}
         onClose={() => setIsReceiveOpen(false)}
-        onSuccess={loadData}
+        onSuccess={() => handleActionSuccess('Stock receipt recorded and synced to inventory balances.')}
         initialItem={selectedItemForAction}
       />
 
       <IssueStockModal
         isOpen={isIssueOpen}
         onClose={() => setIsIssueOpen(false)}
-        onSuccess={loadData}
+        onSuccess={() => handleActionSuccess('Stock issue recorded and deducted from inventory balances.')}
         initialItem={selectedItemForAction}
       />
 
       <TransferStockModal
         isOpen={isTransferOpen}
         onClose={() => setIsTransferOpen(false)}
-        onSuccess={loadData}
+        onSuccess={() => handleActionSuccess('Inter-location stock transfer completed and synced.')}
         initialItem={selectedItemForAction}
       />
 
       <AdjustStockModal
         isOpen={isAdjustOpen}
         onClose={() => setIsAdjustOpen(false)}
-        onSuccess={loadData}
+        onSuccess={() => handleActionSuccess('Physical stock count adjustment applied and logged.')}
         initialItem={selectedItemForAction}
       />
 
       <OpeningStockModal
         isOpen={isOpeningOpen}
         onClose={() => setIsOpeningOpen(false)}
-        onSuccess={loadData}
+        onSuccess={() => handleActionSuccess('Opening stock balance saved and synced.')}
         initialItem={selectedItemForAction}
       />
 
       <StockLocationModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
-        onSuccess={loadData}
+        onSuccess={() => handleActionSuccess('Stock location saved.')}
         locationToEdit={locationToEdit}
       />
 
@@ -1097,13 +1136,13 @@ export const InventoryManagementPanel: React.FC<InventoryManagementPanelProps> =
           setSelectedItemForAction(it);
           setIsAdjustOpen(true);
         }}
-        onUpdated={loadData}
+        onUpdated={() => handleActionSuccess('Inventory configuration updated.')}
       />
 
       <ImportStockModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
-        onSuccess={loadData}
+        onSuccess={() => handleActionSuccess('Inventory CSV import completed.')}
       />
     </div>
   );

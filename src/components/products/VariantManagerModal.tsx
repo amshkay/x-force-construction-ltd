@@ -401,7 +401,7 @@ export const VariantManagerModal: React.FC<VariantManagerModalProps> = ({
                 onRemove={() => setFormData({ ...formData, imageUrl: '' })}
                 bucket="product-media"
                 folder="variants"
-                placeholder="https://images.unsplash.com/... or paste image URL"
+                placeholder="Upload variant photo or paste image URL"
                 previewHeight="h-24"
               />
             </div>

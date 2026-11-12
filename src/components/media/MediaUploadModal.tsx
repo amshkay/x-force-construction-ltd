@@ -268,7 +268,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
               <Input
                 value={onlineUrlInput}
                 onChange={(e) => handleOnlineUrlChange(e.target.value)}
-                placeholder="https://images.unsplash.com/... or cloud image CDN URL"
+                placeholder="Upload file or enter image URL"
                 className="w-full"
               />
             </div>

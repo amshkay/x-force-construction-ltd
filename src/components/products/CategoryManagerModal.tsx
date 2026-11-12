@@ -329,7 +329,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
               onRemove={() => setFormData({ ...formData, imageUrl: '' })}
               bucket="product-media"
               folder="categories"
-              placeholder="https://images.unsplash.com/... or paste image URL"
+              placeholder="Upload category photo or paste image URL"
               previewHeight="h-28"
             />
 

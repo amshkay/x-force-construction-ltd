@@ -8,7 +8,12 @@
  * with synchronized offline-resilient local storage caching.
  */
 
-import { getSupabaseClient } from '../lib/supabase/client';
+import {
+  createSupabaseAuthHeaders,
+  getSupabaseClient,
+  isNetworkOrFetchError,
+  isTableMissingError,
+} from '../lib/supabase/client';
 import { appConfig } from '../config/app.config';
 import { localStore } from '../lib/storage/localStorage';
 import {
@@ -25,6 +30,38 @@ import { DbInventoryBalance, DbStockMovement } from '../types/database';
 
 const INVENTORY_BALANCES_STORAGE_KEY = 'xforce_inventory_balances_v1';
 const STOCK_MOVEMENTS_STORAGE_KEY = 'xforce_stock_movements_v1';
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUuid(value?: string | null): value is string {
+  return Boolean(value && UUID_REGEX.test(value));
+}
+
+function generateUuid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+function isPermissionOrAuthError(error: any): boolean {
+  if (!error) return false;
+  const code = String(error.code || '');
+  const msg = String(error.message || '').toLowerCase();
+  return (
+    code === '42501' ||
+    code === 'PGRST301' ||
+    error.status === 401 ||
+    error.status === 403 ||
+    msg.includes('row-level security') ||
+    msg.includes('permission denied') ||
+    msg.includes('jwt') ||
+    msg.includes('not authenticated')
+  );
+}
 
 export const INITIAL_FOUNDATIONAL_BALANCES: InventoryBalance[] = [];
 
@@ -71,7 +108,48 @@ export class InventoryRepository {
     const year = new Date().getFullYear();
     const existing = this.memoryMovements || [];
     const count = existing.length + 1;
-    return `SM-${year}-${String(count).padStart(5, '0')}`;
+    const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+    return `SM-${year}-${String(count).padStart(5, '0')}-${rand}`;
+  }
+
+  private mapDbBalance(r: DbInventoryBalance): InventoryBalance {
+    return {
+      id: r.id,
+      productId: r.product_id,
+      variantId: r.variant_id,
+      locationId: r.location_id,
+      quantityOnHand: Number(r.quantity_on_hand) || 0,
+      quantityReserved: Number(r.quantity_reserved) || 0,
+      updatedAt: r.updated_at,
+    };
+  }
+
+  private mapDbMovement(r: any): StockMovement {
+    return {
+      id: r.id,
+      movementNumber: r.movement_number || `SM-${String(r.id).substring(0, 8)}`,
+      movementType: r.movement_type,
+      productId: r.product_id,
+      variantId: r.variant_id,
+      productName: '', // enriched in service
+      variantName: null,
+      sku: '',
+      unit: '',
+      sourceLocationId: r.source_location_id,
+      sourceLocationName: null,
+      destinationLocationId: r.destination_location_id,
+      destinationLocationName: null,
+      quantity: Number(r.quantity) || 0,
+      unitCost: r.unit_cost !== null ? Number(r.unit_cost) : null,
+      totalCost: r.unit_cost !== null ? Number(r.unit_cost) * Number(r.quantity) : null,
+      referenceType: r.reference_type,
+      referenceId: r.reference_id,
+      reason: r.notes || 'Inventory transaction',
+      notes: r.notes,
+      performedBy: r.created_by || 'staff',
+      performedByName: 'Staff Officer',
+      createdAt: r.created_at,
+    };
   }
 
   // ============================================================================
@@ -82,43 +160,62 @@ export class InventoryRepository {
     if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
       try {
         const client = getSupabaseClient();
-        let query = client.from('inventory_balances').select('*');
+        const { data: sessionData } = await client.auth.getSession();
+        let remoteRows: DbInventoryBalance[] | null = null;
 
-        if (locationId && locationId !== 'all') {
-          query = query.eq('location_id', locationId);
-        }
-        if (productId) {
-          query = query.eq('product_id', productId);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          if (error.code === 'PGRST205' || error.code === '42P01') {
-            if (!this.warnedAboutMissingTable) {
-              console.info('[InventoryRepository] Supabase inventory_balances table not available, using offline cache.');
-              this.warnedAboutMissingTable = true;
-            }
-            this.isRemoteTableAvailable = false;
+        if (sessionData?.session) {
+          let query = client.from('inventory_balances').select('*');
+          if (locationId && locationId !== 'all') {
+            query = query.eq('location_id', locationId);
           }
-        } else if (data) {
-          const mapped: InventoryBalance[] = data.map((r: DbInventoryBalance) => ({
-            id: r.id,
-            productId: r.product_id,
-            variantId: r.variant_id,
-            locationId: r.location_id,
-            quantityOnHand: Number(r.quantity_on_hand) || 0,
-            quantityReserved: Number(r.quantity_reserved) || 0,
-            updatedAt: r.updated_at,
-          }));
+          if (productId) {
+            query = query.eq('product_id', productId);
+          }
 
-          // Merge into local cache
-          const current = this.memoryBalances || [];
-          const mergedMap = new Map<string, InventoryBalance>();
-          current.forEach((b) => mergedMap.set(`${b.productId}:${b.variantId || 'base'}:${b.locationId}`, b));
-          mapped.forEach((b) => mergedMap.set(`${b.productId}:${b.variantId || 'base'}:${b.locationId}`, b));
-          const mergedList = Array.from(mergedMap.values());
-          this.saveBalances(mergedList);
+          const { data, error } = await query;
+          if (error) {
+            if (isTableMissingError(error, 'inventory_balances')) {
+              if (!this.warnedAboutMissingTable) {
+                console.info('[InventoryRepository] Supabase inventory_balances table not available, using offline cache.');
+                this.warnedAboutMissingTable = true;
+              }
+              this.isRemoteTableAvailable = false;
+            } else if (!isPermissionOrAuthError(error)) {
+              throw error;
+            }
+          } else if (data) {
+            remoteRows = data;
+          }
+        }
 
+        // Fall back to server API bridge if no active Supabase session (e.g. Sandbox Persona) or RLS blocked
+        if (sessionData?.session && remoteRows === null && typeof fetch !== 'undefined') {
+          const params = new URLSearchParams();
+          if (locationId && locationId !== 'all') params.set('locationId', locationId);
+          if (productId) params.set('productId', productId);
+          const qs = params.toString() ? `?${params.toString()}` : '';
+          const res = await fetch(`/api/inventory/balances${qs}`, {
+            headers: createSupabaseAuthHeaders(sessionData.session.access_token),
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.success && Array.isArray(json.data)) {
+              remoteRows = json.data;
+            }
+          }
+        }
+
+        if (remoteRows !== null) {
+          const mapped = remoteRows.map((r) => this.mapDbBalance(r));
+          if ((!locationId || locationId === 'all') && !productId) {
+            this.saveBalances(mapped);
+          } else {
+            const current = this.memoryBalances || [];
+            const mergedMap = new Map<string, InventoryBalance>();
+            current.forEach((b) => mergedMap.set(`${b.productId}:${b.variantId || 'base'}:${b.locationId}`, b));
+            mapped.forEach((b) => mergedMap.set(`${b.productId}:${b.variantId || 'base'}:${b.locationId}`, b));
+            this.saveBalances(Array.from(mergedMap.values()));
+          }
           return mapped;
         }
       } catch (err) {
@@ -141,7 +238,7 @@ export class InventoryRepository {
     variantId: string | null = null,
     locationId: string
   ): Promise<InventoryBalance | null> {
-    const balances = await this.getAllBalances();
+    const balances = await this.getAllBalances(locationId, productId);
     return (
       balances.find(
         (b) =>
@@ -150,6 +247,168 @@ export class InventoryRepository {
           b.locationId === locationId
       ) || null
     );
+  }
+
+  private async saveBalanceToRemote(params: {
+    id: string;
+    productId: string;
+    variantId: string | null;
+    locationId: string;
+    quantityOnHandDelta?: number;
+    absoluteQuantityOnHand?: number;
+    deltaReserved?: number;
+    fallbackOnHand: number;
+    fallbackReserved: number;
+  }): Promise<InventoryBalance | null> {
+    const client = getSupabaseClient();
+    const { data: sessionData } = await client.auth.getSession();
+    const now = new Date().toISOString();
+    const cleanVariantId = params.variantId || null;
+
+    if (sessionData?.session) {
+      // Look up existing row manually because Postgres uses COALESCE expression unique index
+      let findQuery = client
+        .from('inventory_balances')
+        .select('*')
+        .eq('product_id', params.productId)
+        .eq('location_id', params.locationId);
+
+      if (cleanVariantId) {
+        findQuery = findQuery.eq('variant_id', cleanVariantId);
+      } else {
+        findQuery = findQuery.is('variant_id', null);
+      }
+
+      const { data: existingRows, error: findErr } = await findQuery.limit(1);
+
+      if (!findErr) {
+        const existing = existingRows && existingRows.length > 0 ? existingRows[0] : null;
+        if (existing) {
+          const curOnHand = Number(existing.quantity_on_hand) || 0;
+          const curReserved = Number(existing.quantity_reserved) || 0;
+          const nextOnHand =
+            params.absoluteQuantityOnHand !== undefined
+              ? Math.max(0, params.absoluteQuantityOnHand)
+              : params.quantityOnHandDelta !== undefined
+              ? Math.max(0, curOnHand + params.quantityOnHandDelta)
+              : curOnHand;
+          const nextReserved =
+            params.deltaReserved !== undefined
+              ? Math.max(0, curReserved + params.deltaReserved)
+              : curReserved;
+
+          const { data: updatedRow, error: updErr } = await client
+            .from('inventory_balances')
+            .update({
+              quantity_on_hand: nextOnHand,
+              quantity_reserved: nextReserved,
+              updated_at: now,
+            })
+            .eq('id', existing.id)
+            .select()
+            .single();
+
+          if (!updErr && updatedRow) {
+            return this.mapDbBalance(updatedRow);
+          }
+          if (updErr && !isPermissionOrAuthError(updErr)) {
+            throw new Error(updErr.message || 'Failed to update inventory balance in database.');
+          }
+        } else {
+          const { data: insertedRow, error: insErr } = await client
+            .from('inventory_balances')
+            .insert({
+              id: isValidUuid(params.id) ? params.id : generateUuid(),
+              product_id: params.productId,
+              variant_id: cleanVariantId,
+              location_id: params.locationId,
+              quantity_on_hand: params.fallbackOnHand,
+              quantity_reserved: params.fallbackReserved,
+              updated_at: now,
+            } as any)
+            .select()
+            .single();
+
+          if (!insErr && insertedRow) {
+            return this.mapDbBalance(insertedRow);
+          }
+          // Handle concurrent insert race on unique index
+          if (insErr?.code === '23505') {
+            let retryQuery = client
+              .from('inventory_balances')
+              .select('*')
+              .eq('product_id', params.productId)
+              .eq('location_id', params.locationId);
+            retryQuery = cleanVariantId
+              ? retryQuery.eq('variant_id', cleanVariantId)
+              : retryQuery.is('variant_id', null);
+            const { data: retryRows } = await retryQuery.limit(1);
+            if (retryRows && retryRows[0]) {
+              const ex = retryRows[0];
+              const nextOnHand =
+                params.absoluteQuantityOnHand !== undefined
+                  ? Math.max(0, params.absoluteQuantityOnHand)
+                  : params.quantityOnHandDelta !== undefined
+                  ? Math.max(0, Number(ex.quantity_on_hand) + params.quantityOnHandDelta)
+                  : Number(ex.quantity_on_hand);
+              const nextReserved =
+                params.deltaReserved !== undefined
+                  ? Math.max(0, Number(ex.quantity_reserved) + params.deltaReserved)
+                  : Number(ex.quantity_reserved);
+              const { data: updAfterRace, error: updRaceErr } = await client
+                .from('inventory_balances')
+                .update({ quantity_on_hand: nextOnHand, quantity_reserved: nextReserved, updated_at: now })
+                .eq('id', ex.id)
+                .select()
+                .single();
+              if (!updRaceErr && updAfterRace) {
+                return this.mapDbBalance(updAfterRace);
+              }
+            }
+          }
+          if (insErr && !isPermissionOrAuthError(insErr)) {
+            if (isTableMissingError(insErr, 'inventory_balances')) {
+              this.isRemoteTableAvailable = false;
+              return null;
+            }
+            throw new Error(insErr.message || 'Failed to insert inventory balance in database.');
+          }
+        }
+      } else if (!isPermissionOrAuthError(findErr)) {
+        if (isTableMissingError(findErr, 'inventory_balances')) {
+          this.isRemoteTableAvailable = false;
+          return null;
+        }
+        throw new Error(findErr.message || 'Failed to query inventory balance.');
+      }
+    }
+
+    // Use the server bridge only for authenticated sessions rejected by direct RLS.
+    if (!sessionData?.session) return null;
+    if (typeof fetch !== 'undefined') {
+      const res = await fetch('/api/inventory/balance', {
+        method: 'POST',
+        headers: createSupabaseAuthHeaders(sessionData.session.access_token, true),
+        body: JSON.stringify({
+          id: isValidUuid(params.id) ? params.id : generateUuid(),
+          productId: params.productId,
+          variantId: cleanVariantId,
+          locationId: params.locationId,
+          quantityOnHandDelta: params.quantityOnHandDelta,
+          absoluteQuantityOnHand: params.absoluteQuantityOnHand,
+          deltaReserved: params.deltaReserved,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || `Server error updating inventory balance (HTTP ${res.status}).`);
+      }
+      if (json.data) {
+        return this.mapDbBalance(json.data);
+      }
+    }
+
+    return null;
   }
 
   private async upsertBalanceInStore(
@@ -179,10 +438,10 @@ export class InventoryRepository {
 
       updated = {
         ...current,
+        id: isValidUuid(current.id) ? current.id : generateUuid(),
         quantityOnHand: newOnHand,
         updatedAt: now,
       };
-      balances[index] = updated;
     } else {
       const initialOnHand =
         absoluteQuantityOnHand !== undefined
@@ -190,7 +449,7 @@ export class InventoryRepository {
           : Math.max(0, quantityOnHandDelta);
 
       updated = {
-        id: `bal-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: generateUuid(),
         productId,
         variantId: variantId || null,
         locationId,
@@ -198,31 +457,40 @@ export class InventoryRepository {
         quantityReserved: 0,
         updatedAt: now,
       };
-      balances.push(updated);
     }
 
-    this.saveBalances(balances);
-
-    // Sync to Supabase
+    // Sync to Supabase (or server bridge) BEFORE committing optimistic cache on online errors
     if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
       try {
-        const client = getSupabaseClient();
-        await client.from('inventory_balances').upsert(
-          {
-            id: updated.id,
-            product_id: updated.productId,
-            variant_id: updated.variantId,
-            location_id: updated.locationId,
-            quantity_on_hand: updated.quantityOnHand,
-            quantity_reserved: updated.quantityReserved,
-            updated_at: updated.updatedAt,
-          } as any,
-          { onConflict: 'product_id,variant_id,location_id' }
-        );
-      } catch (err) {
-        console.warn('[InventoryRepository] Remote balance upsert failed:', err);
+        const remoteResult = await this.saveBalanceToRemote({
+          id: updated.id,
+          productId,
+          variantId: variantId || null,
+          locationId,
+          quantityOnHandDelta: absoluteQuantityOnHand === undefined ? quantityOnHandDelta : undefined,
+          absoluteQuantityOnHand,
+          fallbackOnHand: updated.quantityOnHand,
+          fallbackReserved: updated.quantityReserved,
+        });
+        if (remoteResult) {
+          updated = remoteResult;
+        }
+      } catch (err: any) {
+        const offline =
+          (typeof navigator !== 'undefined' && !navigator.onLine) || isNetworkOrFetchError(err);
+        if (!offline && this.isRemoteTableAvailable) {
+          throw err;
+        }
+        console.warn('[InventoryRepository] Offline/unreachable remote balance save, cached locally:', err);
       }
     }
+
+    if (index >= 0) {
+      balances[index] = updated;
+    } else {
+      balances.push(updated);
+    }
+    this.saveBalances(balances);
 
     return updated;
   }
@@ -240,59 +508,70 @@ export class InventoryRepository {
     if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
       try {
         const client = getSupabaseClient();
-        let query = client.from('stock_movements').select('*').order('created_at', { ascending: false });
+        const { data: sessionData } = await client.auth.getSession();
+        let remoteRows: any[] | null = null;
 
-        if (filters?.locationId && filters.locationId !== 'all') {
-          query = query.or(`source_location_id.eq.${filters.locationId},destination_location_id.eq.${filters.locationId}`);
-        }
-        if (filters?.productId) {
-          query = query.eq('product_id', filters.productId);
-        }
-        if (filters?.variantId) {
-          query = query.eq('variant_id', filters.variantId);
-        }
-        if (filters?.movementType) {
-          query = query.eq('movement_type', filters.movementType);
+        if (sessionData?.session) {
+          let query = client.from('stock_movements').select('*').order('created_at', { ascending: false });
+
+          if (filters?.locationId && filters.locationId !== 'all') {
+            query = query.or(`source_location_id.eq.${filters.locationId},destination_location_id.eq.${filters.locationId}`);
+          }
+          if (filters?.productId) {
+            query = query.eq('product_id', filters.productId);
+          }
+          if (filters?.variantId) {
+            query = query.eq('variant_id', filters.variantId);
+          }
+          if (filters?.movementType) {
+            query = query.eq('movement_type', filters.movementType);
+          }
+
+          const { data, error } = await query;
+          if (!error && data) {
+            remoteRows = data;
+          } else if (error && isTableMissingError(error, 'stock_movements')) {
+            this.isRemoteTableAvailable = false;
+          }
         }
 
-        const { data, error } = await query;
-        if (!error && data) {
-          const mapped: StockMovement[] = data.map((r: any) => ({
-            id: r.id,
-            movementNumber: r.movement_number || `SM-${r.id.substring(0, 8)}`,
-            movementType: r.movement_type,
-            productId: r.product_id,
-            variantId: r.variant_id,
-            productName: '', // enriched in service
-            variantName: null,
-            sku: '',
-            unit: '',
-            sourceLocationId: r.source_location_id,
-            sourceLocationName: null,
-            destinationLocationId: r.destination_location_id,
-            destinationLocationName: null,
-            quantity: Number(r.quantity) || 0,
-            unitCost: r.unit_cost !== null ? Number(r.unit_cost) : null,
-            totalCost: r.unit_cost !== null ? Number(r.unit_cost) * Number(r.quantity) : null,
-            referenceType: r.reference_type,
-            referenceId: r.reference_id,
-            reason: r.notes || 'Inventory transaction',
-            notes: r.notes,
-            performedBy: r.created_by || 'staff',
-            performedByName: 'Staff Officer',
-            createdAt: r.created_at,
-          }));
+        if (sessionData?.session && remoteRows === null && typeof fetch !== 'undefined') {
+          const params = new URLSearchParams();
+          if (filters?.locationId && filters.locationId !== 'all') params.set('locationId', filters.locationId);
+          if (filters?.productId) params.set('productId', filters.productId);
+          if (filters?.variantId) params.set('variantId', filters.variantId);
+          if (filters?.movementType) params.set('movementType', filters.movementType);
+          const qs = params.toString() ? `?${params.toString()}` : '';
+          const res = await fetch(`/api/inventory/movements${qs}`, {
+            headers: createSupabaseAuthHeaders(sessionData.session.access_token),
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.success && Array.isArray(json.data)) {
+              remoteRows = json.data;
+            }
+          }
+        }
 
-          // Merge local cache
+        if (remoteRows !== null) {
+          const mapped: StockMovement[] = remoteRows.map((r: any) => this.mapDbMovement(r));
+
           const current = this.memoryMovements || [];
-          const existingIds = new Set(mapped.map((m) => m.id));
-          const nonRemote = current.filter((m) => !existingIds.has(m.id));
-          const all = [...mapped, ...nonRemote].sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          this.saveMovements(all);
+          const mappedById = new Map<string, StockMovement>();
+          mapped.forEach((m) => {
+            const cachedMatch = current.find((c) => c.id === m.id);
+            mappedById.set(m.id, {
+              ...m,
+              reason: cachedMatch?.reason || m.reason,
+              performedByName: cachedMatch?.performedByName || m.performedByName,
+            });
+          });
+          const enrichedMapped = Array.from(mappedById.values());
 
-          return all;
+          if (!filters?.locationId && !filters?.productId && !filters?.variantId && !filters?.movementType) {
+            this.saveMovements(enrichedMapped);
+          }
+          return enrichedMapped;
         }
       } catch (err) {
         console.warn('[InventoryRepository] Remote movements query failed, using local store:', err);
@@ -318,32 +597,105 @@ export class InventoryRepository {
   }
 
   private async recordMovement(movement: StockMovement): Promise<void> {
-    const list = [movement, ...(this.memoryMovements || [])];
-    this.saveMovements(list);
-
-    if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
+    if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable && movement.quantity > 0) {
       try {
         const client = getSupabaseClient();
-        await client.from('stock_movements').insert({
-          id: movement.id,
-          movement_number: movement.movementNumber,
-          movement_type: movement.movementType,
+        const { data: sessionData } = await client.auth.getSession();
+
+        const allowedTypes = new Set([
+          'opening_balance',
+          'received',
+          'issued',
+          'transfer',
+          'adjustment',
+          'wastage',
+          'return',
+          'damaged',
+        ]);
+        let dbMovementType: string = movement.movementType;
+        if (!allowedTypes.has(dbMovementType)) {
+          if (dbMovementType === 'stock_count_reconciliation') dbMovementType = 'adjustment';
+          else if (dbMovementType === 'pos_sale') dbMovementType = 'issued';
+          else dbMovementType = 'adjustment';
+        }
+
+        let safeCreatedBy: string | null = isValidUuid(movement.performedBy) ? movement.performedBy : null;
+        let movementNumber = movement.movementNumber;
+        const safeId = isValidUuid(movement.id) ? movement.id : generateUuid();
+        movement.id = safeId;
+
+        const buildPayload = () => ({
+          id: safeId,
+          movement_number: movementNumber,
+          movement_type: dbMovementType,
           product_id: movement.productId,
-          variant_id: movement.variantId,
-          source_location_id: movement.sourceLocationId,
-          destination_location_id: movement.destinationLocationId,
+          variant_id: isValidUuid(movement.variantId) ? movement.variantId : null,
+          source_location_id: isValidUuid(movement.sourceLocationId) ? movement.sourceLocationId : null,
+          destination_location_id: isValidUuid(movement.destinationLocationId) ? movement.destinationLocationId : null,
           quantity: movement.quantity,
           unit_cost: movement.unitCost,
           reference_type: movement.referenceType,
           reference_id: movement.referenceId,
           notes: movement.notes || movement.reason,
-          created_by: movement.performedBy,
+          created_by: safeCreatedBy,
           created_at: movement.createdAt,
-        } as any);
-      } catch (err) {
-        console.warn('[InventoryRepository] Remote movement insert failed:', err);
+        });
+
+        let savedRemotely = false;
+        let needsServerFallback = false;
+
+        if (sessionData?.session) {
+          let { error } = await client.from('stock_movements').insert(buildPayload() as any);
+
+          // Retry if created_by violates auth.users FK
+          if (error && error.code === '23503' && safeCreatedBy !== null) {
+            safeCreatedBy = null;
+            const retry = await client.from('stock_movements').insert(buildPayload() as any);
+            error = retry.error;
+          }
+
+          // Retry if movement_number collides
+          if (error && error.code === '23505') {
+            movementNumber = `${movementNumber}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            movement.movementNumber = movementNumber;
+            const retry = await client.from('stock_movements').insert(buildPayload() as any);
+            error = retry.error;
+          }
+
+          if (!error) {
+            savedRemotely = true;
+          } else if (isTableMissingError(error, 'stock_movements')) {
+            this.isRemoteTableAvailable = false;
+          } else if (isPermissionOrAuthError(error)) {
+            needsServerFallback = true;
+          } else {
+            throw new Error(error.message || 'Failed to record stock movement in database.');
+          }
+        }
+
+        if (!savedRemotely && needsServerFallback && sessionData?.session && typeof fetch !== 'undefined') {
+          const res = await fetch('/api/inventory/movement', {
+            method: 'POST',
+            headers: createSupabaseAuthHeaders(sessionData.session.access_token, true),
+            body: JSON.stringify(movement),
+          });
+          const json = await res.json().catch(() => null);
+          if (!res.ok || !json?.success) {
+            throw new Error(json?.error || `Server error recording stock movement (HTTP ${res.status}).`);
+          }
+        }
+      } catch (err: any) {
+        const offline =
+          (typeof navigator !== 'undefined' && !navigator.onLine) || isNetworkOrFetchError(err);
+        if (!offline && this.isRemoteTableAvailable) {
+          throw err;
+        }
+        console.warn('[InventoryRepository] Offline/unreachable remote movement insert, cached locally:', err);
       }
     }
+
+    const list = [movement, ...(this.memoryMovements || [])];
+    this.saveMovements(list);
   }
 
   // ============================================================================
@@ -362,7 +714,7 @@ export class InventoryRepository {
     }
 
     const movement: StockMovement = {
-      id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUuid(),
       movementNumber: this.generateMovementNumber(),
       movementType: 'received',
       productId: dto.productId,
@@ -426,7 +778,7 @@ export class InventoryRepository {
     }
 
     const movement: StockMovement = {
-      id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUuid(),
       movementNumber: this.generateMovementNumber(),
       movementType: 'issued',
       productId: dto.productId,
@@ -500,7 +852,7 @@ export class InventoryRepository {
     }
 
     const movement: StockMovement = {
-      id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUuid(),
       movementNumber: this.generateMovementNumber(),
       movementType: 'transfer',
       productId: dto.productId,
@@ -569,7 +921,7 @@ export class InventoryRepository {
     }
 
     const movement: StockMovement = {
-      id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUuid(),
       movementNumber: this.generateMovementNumber(),
       movementType: 'adjustment',
       productId: dto.productId,
@@ -618,7 +970,7 @@ export class InventoryRepository {
     }
 
     const movement: StockMovement = {
-      id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUuid(),
       movementNumber: this.generateMovementNumber(),
       movementType: 'opening_balance',
       productId: dto.productId,
@@ -691,7 +1043,7 @@ export class InventoryRepository {
     const delta = params.approvedQuantity - currentOnHand;
 
     const movement: StockMovement = {
-      id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUuid(),
       movementNumber: this.generateMovementNumber(),
       movementType: 'stock_count_reconciliation',
       productId: params.productId,
@@ -777,7 +1129,7 @@ export class InventoryRepository {
 
     for (const item of items) {
       const movement: StockMovement = {
-        id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: generateUuid(),
         movementNumber: this.generateMovementNumber(),
         movementType: 'pos_sale',
         productId: item.productId,
@@ -843,7 +1195,7 @@ export class InventoryRepository {
 
     for (const item of items) {
       const movement: StockMovement = {
-        id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: generateUuid(),
         movementNumber: this.generateMovementNumber(),
         movementType: 'return',
         productId: item.productId,
@@ -908,13 +1260,13 @@ export class InventoryRepository {
       const newReserved = Math.max(0, current.quantityReserved + deltaReserved);
       updated = {
         ...current,
+        id: isValidUuid(current.id) ? current.id : generateUuid(),
         quantityReserved: newReserved,
         updatedAt: now,
       };
-      balances[index] = updated;
     } else {
       updated = {
-        id: `bal-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: generateUuid(),
         productId,
         variantId: variantId || null,
         locationId,
@@ -922,31 +1274,39 @@ export class InventoryRepository {
         quantityReserved: Math.max(0, deltaReserved),
         updatedAt: now,
       };
-      balances.push(updated);
     }
 
-    this.saveBalances(balances);
-
-    // Sync to Supabase if available
+    // Sync to Supabase (or server bridge) BEFORE committing optimistic cache on online errors
     if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
       try {
-        const client = getSupabaseClient();
-        await client.from('inventory_balances').upsert(
-          {
-            id: updated.id,
-            product_id: updated.productId,
-            variant_id: updated.variantId,
-            location_id: updated.locationId,
-            quantity_on_hand: updated.quantityOnHand,
-            quantity_reserved: updated.quantityReserved,
-            updated_at: updated.updatedAt,
-          } as any,
-          { onConflict: 'product_id,variant_id,location_id' }
-        );
-      } catch (err) {
-        console.warn('[InventoryRepository] Remote reserved stock update failed:', err);
+        const remoteResult = await this.saveBalanceToRemote({
+          id: updated.id,
+          productId,
+          variantId: variantId || null,
+          locationId,
+          deltaReserved,
+          fallbackOnHand: updated.quantityOnHand,
+          fallbackReserved: updated.quantityReserved,
+        });
+        if (remoteResult) {
+          updated = remoteResult;
+        }
+      } catch (err: any) {
+        const offline =
+          (typeof navigator !== 'undefined' && !navigator.onLine) || isNetworkOrFetchError(err);
+        if (!offline && this.isRemoteTableAvailable) {
+          throw err;
+        }
+        console.warn('[InventoryRepository] Remote reserved stock update failed (offline cache):', err);
       }
     }
+
+    if (index >= 0) {
+      balances[index] = updated;
+    } else {
+      balances.push(updated);
+    }
+    this.saveBalances(balances);
 
     return updated;
   }
@@ -984,7 +1344,7 @@ export class InventoryRepository {
 
       // 1. Record stock movement
       const movement: StockMovement = {
-        id: `sm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: generateUuid(),
         movementNumber: this.generateMovementNumber(),
         movementType: 'issued',
         productId: item.productId,
@@ -1022,12 +1382,40 @@ export class InventoryRepository {
         const cur = balances[index];
         const newOnHand = Math.max(0, cur.quantityOnHand - item.quantity);
         const newReserved = Math.max(0, cur.quantityReserved - item.quantity);
-        balances[index] = {
+        let updatedBal: InventoryBalance = {
           ...cur,
+          id: isValidUuid(cur.id) ? cur.id : generateUuid(),
           quantityOnHand: newOnHand,
           quantityReserved: newReserved,
           updatedAt: now,
         };
+
+        if (appConfig.supabase.isConfigured && this.isRemoteTableAvailable) {
+          try {
+            const remoteResult = await this.saveBalanceToRemote({
+              id: updatedBal.id,
+              productId: item.productId,
+              variantId: item.variantId || null,
+              locationId,
+              quantityOnHandDelta: -item.quantity,
+              deltaReserved: -item.quantity,
+              fallbackOnHand: newOnHand,
+              fallbackReserved: newReserved,
+            });
+            if (remoteResult) {
+              updatedBal = remoteResult;
+            }
+          } catch (err: any) {
+            const offline =
+              (typeof navigator !== 'undefined' && !navigator.onLine) || isNetworkOrFetchError(err);
+            if (!offline && this.isRemoteTableAvailable) {
+              throw err;
+            }
+            console.warn('[InventoryRepository] Remote dispatch balance update failed (offline cache):', err);
+          }
+        }
+
+        balances[index] = updatedBal;
         this.saveBalances(balances);
       } else {
         await this.upsertBalanceInStore(item.productId, item.variantId || null, locationId, -item.quantity);

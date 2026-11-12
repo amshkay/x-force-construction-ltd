@@ -52,7 +52,7 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
     if (isOpen) {
       loadDependencies();
     }
-  }, [isOpen]);
+  }, [isOpen, initialItem]);
 
   const loadDependencies = async () => {
     try {
@@ -61,13 +61,17 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
         stockLocationRepository.getActiveLocations(),
       ]);
 
-      const prods = prodsRes || [];
+      const prods = (prodsRes || []).filter((p) => p.isActive);
       setProducts(prods);
       setLocations(locs);
 
-      let targetProdId = prods[0]?.id || '';
-      let targetVarId = prods[0]?.variants?.[0]?.id || '';
-      let targetLocId = locs[0]?.id || '';
+      const defaultLoc = locs.find((l) => l.isDefault) || locs[0];
+      const firstProd = prods[0];
+      const firstActiveVar = (firstProd?.variants || []).find((v) => v.isActive);
+
+      let targetProdId = firstProd?.id || '';
+      let targetVarId = firstActiveVar?.id || '';
+      let targetLocId = defaultLoc?.id || '';
 
       if (initialItem) {
         targetProdId = initialItem.productId;
@@ -82,6 +86,7 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
       setSelectedProductId(targetProdId);
       setSelectedVariantId(targetVarId);
       setLocationId(targetLocId);
+      setReason('Physical yard count audit discrepancy');
       setNotes('');
       setError(null);
     } catch {
@@ -103,12 +108,13 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
   };
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
-  const variants = selectedProduct?.variants || [];
+  const variants = (selectedProduct?.variants || []).filter((v) => v.isActive);
 
   const handleProductChange = async (prodId: string) => {
     setSelectedProductId(prodId);
     const prod = products.find((p) => p.id === prodId);
-    const newVarId = prod?.variants && prod.variants.length > 0 ? prod.variants[0].id : '';
+    const activeVars = (prod?.variants || []).filter((v) => v.isActive);
+    const newVarId = activeVars.length > 0 ? activeVars[0].id : '';
     setSelectedVariantId(newVarId);
     await updateBalanceCheck(prodId, newVarId || null, locationId);
   };
@@ -337,20 +343,27 @@ export const AdjustStockModal: React.FC<AdjustStockModalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-          <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            size="sm"
-            isLoading={isLoading}
-            disabled={delta === 0}
-            leftIcon={<CheckCircle2 className="h-4 w-4" />}
-          >
-            Apply Adjustment
-          </Button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+          <span className="text-[11px] text-slate-500">
+            {delta === 0
+              ? 'Enter a new physical count different from current recorded stock to apply adjustment.'
+              : `Will record an adjustment of ${delta > 0 ? `+${delta}` : delta} ${selectedProduct?.unit || 'units'}.`}
+          </span>
+          <div className="flex items-center justify-end gap-3 shrink-0">
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={isLoading}
+              disabled={delta === 0}
+              leftIcon={<CheckCircle2 className="h-4 w-4" />}
+            >
+              Apply Adjustment
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>

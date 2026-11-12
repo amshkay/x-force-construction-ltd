@@ -23,9 +23,9 @@ import {
 } from '../types/product';
 import { Result } from '../types/common';
 
-const LOCAL_STORAGE_PRODUCTS_KEY = 'xforce_catalogue_products_v6';
-const LOCAL_STORAGE_CATEGORIES_KEY = 'xforce_catalogue_categories_v6';
-const LOCAL_STORAGE_VARIANTS_KEY = 'xforce_catalogue_variants_v6';
+const LOCAL_STORAGE_PRODUCTS_KEY = 'xforce_catalogue_products_v8';
+const LOCAL_STORAGE_CATEGORIES_KEY = 'xforce_catalogue_categories_v8';
+const LOCAL_STORAGE_VARIANTS_KEY = 'xforce_catalogue_variants_v8';
 
 // Genuine foundational categories for XFORCE Construction Ltd
 const INITIAL_FOUNDATIONAL_CATEGORIES: ProductCategory[] = [
@@ -113,11 +113,65 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: true,
     images: [
-      '/assets/services/pavement-laying.jpg',
+      '/assets/products/paver-80mm-charcoal.jpg',
+      '/assets/products/paver-80mm-terracotta.jpg',
+      '/assets/products/paver-80mm-granite-grey.jpg',
     ],
     attributes: { 'Compressive Strength': '45 MPa', Thickness: '80mm', 'Coverage Per m²': '40 blocks' },
     sortOrder: 1,
-    variants: [],
+    variants: [
+      {
+        id: 'ba000000-0000-0000-0000-000000000001',
+        productId: 'b1000000-0000-0000-0000-000000000001',
+        name: 'Industrial Terracotta Red',
+        sku: 'PAV-80-TERRA-01',
+        color: 'Terracotta Red',
+        size: '80mm Heavy-Duty',
+        finish: 'Hydraulic Vibratory Pressed',
+        description: 'Vibrant earth-iron oxide pigmented paver for commercial walkways and demarcation.',
+        imageUrl: '/assets/products/paver-80mm-terracotta.jpg',
+        priceOverride: 185,
+        isActive: true,
+        sortOrder: 1,
+        attributes: { Pigment: 'Iron Oxide Red', CompressiveStrength: '45 MPa' },
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'ba000000-0000-0000-0000-000000000002',
+        productId: 'b1000000-0000-0000-0000-000000000001',
+        name: 'Charcoal Black High-Torque',
+        sku: 'PAV-80-CHAR-02',
+        color: 'Charcoal Black',
+        size: '80mm Heavy-Duty',
+        finish: 'Carbon-Infused Industrial Finish',
+        description: 'High-torque heavy container yard and logistics terminal finish.',
+        imageUrl: '/assets/products/paver-80mm-charcoal.jpg',
+        priceOverride: 195,
+        isActive: true,
+        sortOrder: 2,
+        attributes: { Pigment: 'Carbon Black', CompressiveStrength: '45 MPa' },
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'ba000000-0000-0000-0000-000000000003',
+        productId: 'b1000000-0000-0000-0000-000000000001',
+        name: 'Natural Granite Grey',
+        sku: 'PAV-80-GREY-03',
+        color: 'Granite Grey',
+        size: '80mm Heavy-Duty',
+        finish: 'Unpigmented Pure Granite Aggregate',
+        description: 'Heavy architectural traffic road surface with natural stone appearance.',
+        imageUrl: '/assets/products/paver-80mm-granite-grey.jpg',
+        priceOverride: 185,
+        isActive: true,
+        sortOrder: 3,
+        attributes: { Pigment: 'Natural Concrete', CompressiveStrength: '45 MPa' },
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    ],
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
@@ -141,7 +195,10 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: true,
     images: [
-      '/assets/services/pavement-laying.jpg',
+      '/assets/products/paver-60mm-1.jpg',
+      '/assets/products/paver-60mm-2.jpg',
+      '/assets/products/paver-60mm-3.jpg',
+      '/assets/products/paver-60mm-4.jpg',
     ],
     attributes: { 'Compressive Strength': '30 MPa', Thickness: '60mm', 'Coverage Per m²': '40 blocks' },
     sortOrder: 2,
@@ -169,11 +226,47 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: true,
     images: [
-      '/assets/services/interlocking-brick-construction.jpg',
+      '/assets/products/hydraform-ochre.jpg',
+      '/assets/products/hydraform-terracotta.jpg',
     ],
     attributes: { Dimensions: '220 x 220 x 115mm', 'Thermal Mass': 'High', Joint: 'Mortarless Dry-Stack' },
     sortOrder: 3,
-    variants: [],
+    variants: [
+      {
+        id: 'ba000000-0000-0000-0000-000000000004',
+        productId: 'b1000000-0000-0000-0000-000000000003',
+        name: 'Natural Clay Ochre',
+        sku: 'BLK-220-OCH-01',
+        color: 'Natural Ochre',
+        size: '220 x 220 x 115mm',
+        finish: 'Smooth Hydraulic Compressed Earth',
+        description: 'Stabilized soil-cement block with natural golden warm earth tone.',
+        imageUrl: '/assets/products/hydraform-ochre.jpg',
+        priceOverride: 320,
+        isActive: true,
+        sortOrder: 1,
+        attributes: { SoilType: 'Laterite Sand', CementRatio: '8%' },
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'ba000000-0000-0000-0000-000000000005',
+        productId: 'b1000000-0000-0000-0000-000000000003',
+        name: 'Earthy Terracotta Red',
+        sku: 'BLK-220-TER-02',
+        color: 'Terracotta',
+        size: '220 x 220 x 115mm',
+        finish: 'Warm Iron-Rich Laterite',
+        description: 'Rich red soil compressed block for exterior structural facing walls.',
+        imageUrl: '/assets/products/hydraform-terracotta.jpg',
+        priceOverride: 335,
+        isActive: true,
+        sortOrder: 2,
+        attributes: { SoilType: 'Red Laterite', CementRatio: '8%' },
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    ],
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
@@ -197,7 +290,12 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: false,
     images: [
-      '/assets/services/interlocking-brick-construction.jpg',
+      '/assets/products/conduit-1.jpg',
+      '/assets/products/conduit-2.jpg',
+      '/assets/products/conduit-3.jpg',
+      '/assets/products/conduit-4.jpg',
+      '/assets/products/conduit-5.jpg',
+      '/assets/products/conduit-6.jpg',
     ],
     attributes: { Core: 'Dual 75mm Diameter', Dimensions: '220 x 220 x 115mm' },
     sortOrder: 4,
@@ -225,7 +323,11 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: false,
     images: [
-      '/assets/services/pavement-laying.jpg',
+      '/assets/products/kerb-1.jpg',
+      '/assets/products/kerb-2.jpg',
+      '/assets/products/kerb-3.jpg',
+      '/assets/products/kerb-4.jpg',
+      '/assets/products/kerb-5.jpg',
     ],
     attributes: { Dimensions: '125 x 250 x 500mm', Grade: 'Grade 30 Vibrated' },
     sortOrder: 5,
@@ -253,7 +355,9 @@ const INITIAL_FOUNDATIONAL_PRODUCTS: Product[] = [
     isPublished: true,
     isFeatured: false,
     images: [
-      '/assets/services/interlocking-brick-construction.jpg',
+      '/assets/products/coping-1.jpg',
+      '/assets/products/coping-2.jpg',
+      '/assets/products/coping-3.jpg',
     ],
     attributes: { Width: '300mm', Profile: 'Saddleback Peak' },
     sortOrder: 6,
@@ -556,23 +660,125 @@ export class ProductRepository {
       products = localStore.get<Product[]>(LOCAL_STORAGE_PRODUCTS_KEY, this.productsCache);
     }
 
-    // Auto-upgrade legacy mock images in local cache to authentic local assets
+    // Auto-upgrade legacy mock images (Unsplash or service photos) in products and variants to authentic assets
     let prodsChanged = false;
     products = products.map((p) => {
-      if (
-        Array.isArray(p.images) &&
-        p.images.some((img) => img.includes('1590381105924') || img.includes('photo-1590381105924'))
-      ) {
+      let images = Array.isArray(p.images)
+        ? p.images.filter(
+            (img): img is string =>
+              typeof img === 'string' &&
+              img.trim() !== '' &&
+              !img.includes('unsplash.com') &&
+              !img.includes('/assets/services/') &&
+              !img.includes('1590381105924')
+          )
+        : [];
+
+      if (images.length === 0) {
         prodsChanged = true;
-        const newImgs = p.images.map((img) =>
-          img.includes('1590381105924') || img.includes('photo-1590381105924')
-            ? '/assets/services/pavement-laying.jpg'
-            : img
-        );
-        return { ...p, images: newImgs };
+        const nameLower = p.name.toLowerCase();
+        if (p.id === 'b1000000-0000-0000-0000-000000000001' || nameLower.includes('80mm')) {
+          images = [
+            '/assets/products/paver-80mm-charcoal.jpg',
+            '/assets/products/paver-80mm-terracotta.jpg',
+            '/assets/products/paver-80mm-granite-grey.jpg',
+            '/assets/products/paver-80mm-0.jpg',
+            '/assets/products/paver-80mm-1.jpg',
+            '/assets/products/paver-80mm-2.jpg',
+            '/assets/products/paver-80mm-3.jpg',
+            '/assets/products/paver-80mm-4.jpg',
+          ];
+        } else if (nameLower.includes('hydraform') || nameLower.includes('earth block')) {
+          images = [
+            '/assets/products/hydraform-ochre.jpg',
+            '/assets/products/hydraform-terracotta.jpg',
+          ];
+        } else if (nameLower.includes('kerb') || nameLower.includes('barrier')) {
+          images = [
+            '/assets/products/kerb-1.jpg',
+            '/assets/products/kerb-2.jpg',
+            '/assets/products/kerb-3.jpg',
+            '/assets/products/kerb-4.jpg',
+            '/assets/products/kerb-5.jpg',
+          ];
+        } else if (nameLower.includes('coping') || nameLower.includes('saddleback')) {
+          images = [
+            '/assets/products/coping-1.jpg',
+            '/assets/products/coping-2.jpg',
+            '/assets/products/coping-3.jpg',
+          ];
+        } else if (nameLower.includes('conduit') || nameLower.includes('cored')) {
+          images = [
+            '/assets/products/conduit-1.jpg',
+            '/assets/products/conduit-2.jpg',
+            '/assets/products/conduit-3.jpg',
+            '/assets/products/conduit-4.jpg',
+            '/assets/products/conduit-5.jpg',
+            '/assets/products/conduit-6.jpg',
+          ];
+        } else if (nameLower.includes('60mm') || nameLower.includes('standard')) {
+          images = [
+            '/assets/products/paver-60mm-1.jpg',
+            '/assets/products/paver-60mm-2.jpg',
+            '/assets/products/paver-60mm-3.jpg',
+            '/assets/products/paver-60mm-4.jpg',
+          ];
+        } else if (nameLower.includes('paver') || nameLower.includes('paving')) {
+          images = [
+            '/assets/products/paver-80mm-granite-grey.jpg',
+            '/assets/products/paver-80mm-charcoal.jpg',
+          ];
+        } else {
+          images = ['/assets/products/paver-80mm-charcoal.jpg'];
+        }
       }
-      return p;
+
+      // If product has no variants loaded, check if foundational variants exist
+      let variants = Array.isArray(p.variants) && p.variants.length > 0 ? [...p.variants] : [];
+      if (variants.length === 0) {
+        const found = INITIAL_FOUNDATIONAL_PRODUCTS.find((fp) => fp.id === p.id);
+        if (found && found.variants && found.variants.length > 0) {
+          variants = [...found.variants];
+          prodsChanged = true;
+        }
+      }
+
+      // Sanitize variant images
+      variants = variants.map((v) => {
+        const vUrl = v.imageUrl || '';
+        const isMockVariant =
+          !vUrl ||
+          vUrl.includes('unsplash.com') ||
+          vUrl.includes('/assets/services/') ||
+          vUrl.includes('1590381105924');
+
+        if (isMockVariant) {
+          prodsChanged = true;
+          const col = `${v.name} ${v.color || ''}`.toLowerCase();
+          let cleanUrl = images[0] || '/assets/products/paver-80mm-charcoal.jpg';
+          if (col.includes('terracotta') || col.includes('red')) {
+            cleanUrl = p.name.toLowerCase().includes('hydraform')
+              ? '/assets/products/hydraform-terracotta.jpg'
+              : '/assets/products/paver-80mm-terracotta.jpg';
+          } else if (col.includes('charcoal') || col.includes('black')) {
+            cleanUrl = '/assets/products/paver-80mm-charcoal.jpg';
+          } else if (col.includes('granite') || col.includes('grey') || col.includes('gray')) {
+            cleanUrl = '/assets/products/paver-80mm-granite-grey.jpg';
+          } else if (col.includes('ochre') || col.includes('clay')) {
+            cleanUrl = '/assets/products/hydraform-ochre.jpg';
+          }
+          return { ...v, imageUrl: cleanUrl };
+        }
+        return v;
+      });
+
+      return {
+        ...p,
+        images,
+        variants,
+      };
     });
+
     if (prodsChanged) {
       localStore.set(LOCAL_STORAGE_PRODUCTS_KEY, products);
     }

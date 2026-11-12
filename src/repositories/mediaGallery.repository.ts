@@ -23,7 +23,7 @@ import { Result } from '../types/common';
 
 const LOCAL_STORAGE_MEDIA_KEY = 'xforce_gallery_media_v7';
 const LOCAL_STORAGE_DESIGNS_KEY = 'xforce_gallery_designs_v7';
-const LOCAL_STORAGE_PROJECTS_KEY = 'xforce_gallery_projects_v7';
+const LOCAL_STORAGE_PROJECTS_KEY = 'xforce_gallery_projects_v8';
 
 // Initial realistic design concepts for XFORCE Construction Ltd
 const INITIAL_DESIGNS: DesignItem[] = [
@@ -138,32 +138,32 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       'Granite Stone Dust (0-5mm)',
       'Cast Concrete Heavy Kerbs',
     ],
-    coverImageUrl: '/assets/services/pavement-laying.jpg',
+    coverImageUrl: '/assets/projects/atlantic-logistics.jpg',
     galleryMedia: [
       {
         id: 'pm-01-before',
-        url: '/assets/services/site-inspection-surveying.jpg',
+        url: '/assets/projects/atlantic-logistics.jpg',
         caption: 'Site cleared and graded prior to sub-base compaction and geotextile installation.',
         phase: 'before',
         sortOrder: 1,
       },
       {
         id: 'pm-01-during-1',
-        url: '/assets/services/pavement-laying.jpg',
+        url: '/assets/projects/atlantic-logistics.jpg',
         caption: 'Laser leveling of sharp sand bedding layer and laying 45° herringbone paver matrix.',
         phase: 'during',
         sortOrder: 2,
       },
       {
         id: 'pm-01-during-2',
-        url: '/assets/services/pavement-laying.jpg',
+        url: '/assets/projects/atlantic-logistics.jpg',
         caption: 'Vibratory plate compaction with rubber protective mat to lock kiln-dried joint sand.',
         phase: 'during',
         sortOrder: 3,
       },
       {
         id: 'pm-01-after',
-        url: '/assets/services/pavement-laying.jpg',
+        url: '/assets/projects/atlantic-logistics.jpg',
         caption: 'Fully operational container staging apron delivered ahead of schedule.',
         phase: 'after',
         sortOrder: 4,
@@ -191,25 +191,25 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       'High-Strength Reinforced Grout',
       'Breathable Siloxane Water-Repellent Sealant',
     ],
-    coverImageUrl: '/assets/services/interlocking-brick-construction.jpg',
+    coverImageUrl: '/assets/projects/palms-villa.jpg',
     galleryMedia: [
       {
         id: 'pm-02-before',
-        url: '/assets/services/site-inspection-surveying.jpg',
+        url: '/assets/projects/palms-villa.jpg',
         caption: 'Engineered raft foundation completed with vertical starter dowels positioned for block alignment.',
         phase: 'before',
         sortOrder: 1,
       },
       {
         id: 'pm-02-during',
-        url: '/assets/services/interlocking-brick-construction.jpg',
+        url: '/assets/projects/palms-villa.jpg',
         caption: 'Dry-stack assembly of interlocking blocks with rubber mallets ensuring 0mm mortar joint tolerance.',
         phase: 'during',
         sortOrder: 2,
       },
       {
         id: 'pm-02-after',
-        url: '/assets/services/interlocking-brick-construction.jpg',
+        url: '/assets/projects/palms-villa.jpg',
         caption: 'Completed residence showcasing rich natural earth tones and clean architectural shadow lines.',
         phase: 'after',
         sortOrder: 3,
@@ -237,25 +237,25 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       'Precast Concrete Saddleback Wall Coping (300mm)',
       '12mm High-Yield Reinforcement Rebar',
     ],
-    coverImageUrl: '/assets/services/site-inspection-surveying.jpg',
+    coverImageUrl: '/assets/projects/epe-waterfront.jpg',
     galleryMedia: [
       {
         id: 'pm-03-before',
-        url: '/assets/services/site-inspection-surveying.jpg',
+        url: '/assets/projects/epe-waterfront.jpg',
         caption: 'Trench excavation and lean concrete blinding along 1.2km estate perimeter contour.',
         phase: 'before',
         sortOrder: 1,
       },
       {
         id: 'pm-03-during',
-        url: '/assets/services/interlocking-brick-construction.jpg',
+        url: '/assets/projects/epe-waterfront.jpg',
         caption: 'Rapid interlocking block wall erection by trained XFORCE certified installation crew.',
         phase: 'during',
         sortOrder: 2,
       },
       {
         id: 'pm-03-after',
-        url: '/assets/services/site-inspection-surveying.jpg',
+        url: '/assets/projects/epe-waterfront.jpg',
         caption: 'Finished perimeter security wall with decorative concrete coping.',
         phase: 'after',
         sortOrder: 3,
@@ -283,7 +283,7 @@ export const INITIAL_PROJECTS: ProjectGalleryItem[] = [
       'Sub-base Crushed Stone Granite',
       'Drainage Channel Precast Gutters',
     ],
-    coverImageUrl: '/assets/services/pavement-laying.jpg',
+    coverImageUrl: '/assets/projects/victoria-plaza.jpg',
     galleryMedia: [
       {
         id: 'pm-04-before',
@@ -612,9 +612,23 @@ class MediaGalleryRepository {
     if (cached && cached.length > 0) {
       let modified = false;
       const sanitized = cached.map((p) => {
-        if (p.coverImageUrl?.includes('1590381105924') || p.coverImageUrl?.includes('photo-1590381105924')) {
+        if (
+          !p.coverImageUrl ||
+          p.coverImageUrl.includes('1590381105924') ||
+          p.coverImageUrl.includes('photo-1590381105924') ||
+          p.coverImageUrl.includes('/assets/services/')
+        ) {
           modified = true;
-          return { ...p, coverImageUrl: '/assets/services/pavement-laying.jpg' };
+          if (p.id === 'e7000000-0000-0000-0000-000000000001' || p.category?.toLowerCase().includes('industrial')) {
+            return { ...p, coverImageUrl: '/assets/projects/atlantic-logistics.jpg' };
+          }
+          if (p.id === 'e7000000-0000-0000-0000-000000000002' || p.category?.toLowerCase().includes('residential')) {
+            return { ...p, coverImageUrl: '/assets/projects/palms-villa.jpg' };
+          }
+          if (p.id === 'e7000000-0000-0000-0000-000000000003' || p.category?.toLowerCase().includes('perimeter')) {
+            return { ...p, coverImageUrl: '/assets/projects/epe-waterfront.jpg' };
+          }
+          return { ...p, coverImageUrl: '/assets/projects/victoria-plaza.jpg' };
         }
         return p;
       });

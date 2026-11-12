@@ -134,18 +134,18 @@ export const FeaturedProjectsManagementModal: React.FC<FeaturedProjectsManagemen
         'Cast Concrete Retaining Kerbs',
         'Sharp River Sand Screed',
       ],
-      coverImageUrl: '/assets/services/pavement-laying.jpg',
+      coverImageUrl: '/assets/projects/atlantic-logistics.jpg',
       galleryMedia: [
         {
           id: `gm-${Date.now()}-1`,
-          url: '/assets/services/site-inspection-surveying.jpg',
+          url: '/assets/projects/palms-villa.jpg',
           caption: 'Sub-base compaction and perimeter kerb alignment.',
           phase: 'before',
           sortOrder: 1,
         },
         {
           id: `gm-${Date.now()}-2`,
-          url: '/assets/services/pavement-laying.jpg',
+          url: '/assets/projects/atlantic-logistics.jpg',
           caption: 'Completed project installation sign-off.',
           phase: 'after',
           sortOrder: 2,
@@ -480,7 +480,7 @@ export const FeaturedProjectsManagementModal: React.FC<FeaturedProjectsManagemen
                     referrerPolicy="no-referrer"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        '/assets/services/pavement-laying.jpg';
+                        '/assets/projects/atlantic-logistics.jpg';
                     }}
                   />
                 ) : (

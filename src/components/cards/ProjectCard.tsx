@@ -20,15 +20,15 @@ export interface ProjectCardProps {
 const getProjectFallbackImage = (cat: string, title: string): string => {
   const text = `${cat} ${title}`.toLowerCase();
   if (text.includes('industrial') || text.includes('commercial') || text.includes('yard') || text.includes('road') || text.includes('terminal')) {
-    return '/assets/services/pavement-laying.jpg';
+    return '/assets/projects/atlantic-logistics.jpg';
   }
   if (text.includes('residential') || text.includes('villa') || text.includes('facade') || text.includes('house')) {
-    return '/assets/services/interlocking-brick-construction.jpg';
+    return '/assets/projects/palms-villa.jpg';
   }
   if (text.includes('perimeter') || text.includes('fencing') || text.includes('wall') || text.includes('gatehouse') || text.includes('enclosure')) {
-    return '/assets/services/interlocking-brick-construction.jpg';
+    return '/assets/projects/epe-waterfront.jpg';
   }
-  return '/assets/services/site-inspection-surveying.jpg';
+  return '/assets/projects/victoria-plaza.jpg';
 };
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({

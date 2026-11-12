@@ -24,16 +24,28 @@ export interface ProductCardProps {
 
 const getCategoryFallbackImage = (cat: string, prodName: string): string => {
   const text = `${cat} ${prodName}`.toLowerCase();
-  if (text.includes('paver') || text.includes('paving') || text.includes('stone')) {
-    return '/assets/services/pavement-laying.jpg';
+  if (text.includes('barrier kerb') || text.includes('kerb')) {
+    return '/assets/products/kerb-1.jpg';
+  }
+  if (text.includes('coping') || text.includes('saddleback')) {
+    return '/assets/products/coping-1.jpg';
+  }
+  if (text.includes('conduit') || text.includes('cored')) {
+    return '/assets/products/conduit-1.jpg';
+  }
+  if (text.includes('60mm')) {
+    return '/assets/products/paver-60mm-1.jpg';
+  }
+  if (text.includes('80mm') || text.includes('heavy-duty') || text.includes('charcoal')) {
+    return '/assets/products/paver-80mm-charcoal.jpg';
+  }
+  if (text.includes('paver') || text.includes('paving') || text.includes('stone') || text.includes('walkway')) {
+    return '/assets/products/paver-80mm-granite-grey.jpg';
   }
   if (text.includes('brick') || text.includes('hydraform') || text.includes('wall') || text.includes('earth') || text.includes('block')) {
-    return '/assets/services/interlocking-brick-construction.jpg';
+    return '/assets/products/hydraform-ochre.jpg';
   }
-  if (text.includes('coping') || text.includes('kerb') || text.includes('concrete') || text.includes('cap') || text.includes('tile')) {
-    return '/assets/services/interlocking-brick-construction.jpg';
-  }
-  return '/assets/services/site-inspection-surveying.jpg';
+  return '/assets/products/paver-80mm-granite-grey.jpg';
 };
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -52,7 +64,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   className,
 }) => {
   const [imageError, setImageError] = React.useState(false);
-  const activeImage = !imageError && imageUrl ? imageUrl : getCategoryFallbackImage(category, name);
+  const isMockUrl = !imageUrl || imageUrl.includes('unsplash.com') || imageUrl.includes('/assets/services/');
+  const activeImage = !imageError && !isMockUrl ? imageUrl : getCategoryFallbackImage(category, name);
 
   return (
     <div

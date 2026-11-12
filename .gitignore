@@ -15,4 +15,4 @@ coverage/
 *.pem
 *.key
 *.cert
-
+.aistudio/
